@@ -1,0 +1,7 @@
+__pycache__
+data
+logs
+result
+src/*.log
+*.log
+src/configs/key.py
