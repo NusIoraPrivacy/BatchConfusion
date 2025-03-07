@@ -4,4 +4,4 @@ logs
 result
 src/*.log
 *.log
-src/configs/key.py
+key.py
