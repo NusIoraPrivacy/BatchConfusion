@@ -47,20 +47,22 @@ class CompressDataset(Dataset):
             # print(input_id)
             if self.pad:
                 input_id = self.pad_token(input_id)
+            # create target ids
+            label_id = copy.deepcopy(input_id)
+            label_id[:(len(prefix_id)-1)] = -1
+            label_mask = label_id.ge(0)
+            label_id[~label_mask] = IGNORE_INDEX
+            # print(prefix_id)
+
+            if self.pad:
                 prefix_id = self.pad_token(prefix_id)
+
             att_mask = input_id.ge(0)
             input_id[~att_mask] = self.tokenizer.pad_token_id
             att_mask = att_mask.float()
             query_att_mask = prefix_id.ge(0)
             prefix_id[~query_att_mask] = self.tokenizer.pad_token_id
             query_att_mask = query_att_mask.float()
-
-            # create target ids
-            label_id = copy.deepcopy(input_id)
-            label_id[:(len(prefix_id)-1)] = -1
-            label_mask = label_id.ge(0)
-            label_id[~label_mask] = IGNORE_INDEX
-            # print(label_id)
 
             examples.append(input_id)
             labels.append(label_id)

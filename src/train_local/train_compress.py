@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--gpt_model", type=str, default="gpt-4o")
     parser.add_argument("--data_name", type=str, default="mmlu")
-    parser.add_argument("--model_name", type=str, default=models[2])
+    parser.add_argument("--model_name", type=str, default=models[0])
     parser.add_argument("--test_only", type=bool, default=False)
     args = parser.parse_args()
 
@@ -100,6 +100,7 @@ if __name__ == "__main__":
                     output = model(input_ids = batch["input_ids"], 
                                 attention_mask = batch["attention_mask"],
                                 labels = batch["labels"]) 
+                    # print(batch["labels"][batch["labels"]>0])
                     loss = output.loss
                     loss_list.append(loss.item())
                     loss.backward()
