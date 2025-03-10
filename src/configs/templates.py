@@ -70,9 +70,29 @@ compress_reflect_template = (
     "#thecompression: your new compression here."
 )
 
+compress_mask_template = (
+    "Compress the given question to short expressions, such that you (GPT-4o) can still correctly answer the question. "
+    "Please comply with the guideline below:\n"
+    "1. You should remove all unneccessary or redundant information.\n"
+    "2. If the question contain complex context, remember to keep all important information neccessary to answer the question.\n"
+    "3. Do not use abbreviations or emojis.\n"
+    "4. Compress the origin as short as you can.\n"
+    "5. If the original question is already short enough, do not compress and return the original question.\n"
+    "6. If the question is about fill in the blank, do not compress and return the original question.\n"
+    "7. If the quesiton contain #MASK and you infer that the mask information is important, keep the #MASK appropriately in the compressed question.\n"
+    "Please compress the following question: {question}\n"
+    "Remember to return only the compressed question."
+)
+
+fill_compress_template = (
+    "The original question is {org_question}, and the compressed question is {compression}.\n"
+    "Please fill in the #MASK of the compressed question according to the original question, "
+    "and obtain the unmasked compressed question. Remember to return only the unmasked compressed question."
+)
+
 local_compress_template = (
     "Please compress the give question into short expressions, "
-    "such that you only remove remove all unneccessary or redundant information, "
+    "such that you only remove all unneccessary or redundant information, "
     "and retain all important information neccessary to answer the question. "
     "If the original question is already short enough or is about fill in the blank, "
     "do not compress and return the original question. Question:"

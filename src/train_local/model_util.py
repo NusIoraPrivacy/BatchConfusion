@@ -12,7 +12,7 @@ def get_model_tokenizer(model_name, args):
         tokenizer.pad_token = tokenizer.eos_token
         with init_empty_weights():
             model = AutoModelForCausalLM.from_pretrained(model_name)
-        device_map = infer_auto_device_map(model, max_memory={0: "12GiB", 1: "12GiB", 2: "12GiB", 3: "12GiB",}, 
+        device_map = infer_auto_device_map(model, max_memory={0: "0GiB", 1: "0GiB", 2: "20GiB", 3: "20GiB",}, 
                     no_split_module_classes=['MixtralDecoderLayer', "LlamaDecoderLayer", "Phi3DecoderLayer"])
         print(device_map)
         model = AutoModelForCausalLM.from_pretrained(model_name, device_map = device_map)

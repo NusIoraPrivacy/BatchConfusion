@@ -52,7 +52,7 @@ class CompressDataset(Dataset):
             label_id[:(len(prefix_id)-1)] = -1
             label_mask = label_id.ge(0)
             label_id[~label_mask] = IGNORE_INDEX
-            # print(prefix_id)
+            print(label_id)
 
             if self.pad:
                 prefix_id = self.pad_token(prefix_id)

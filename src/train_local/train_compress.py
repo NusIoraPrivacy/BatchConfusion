@@ -122,7 +122,9 @@ if __name__ == "__main__":
                     output_ids = model.generate(
                         input_ids = batch["query_ids"], 
                         attention_mask = batch["query_attention_mask"], 
-                        max_new_tokens=512)
+                        max_new_tokens=512, 
+                        # repetition_penalty=0.1,
+                        )
                 
                 queries = tokenizer.batch_decode(batch["query_ids"], skip_special_tokens=True)
                 # prompts = tokenizer.batch_decode(batch["input_ids"], skip_special_tokens=True)
@@ -138,6 +140,7 @@ if __name__ == "__main__":
                         continue
                     pred = pred.replace(query, "")
                     # print(pred)
+                    # print("\n")
                     sample["predicted compression"] = pred
                     output_data.append(sample)
                 pbar.update(1)
