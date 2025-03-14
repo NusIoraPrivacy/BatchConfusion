@@ -29,9 +29,9 @@ def parse_args():
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--gpt_model", type=str, default="gpt-4o")
-    parser.add_argument("--data_name", type=str, default="mmlu")
+    parser.add_argument("--data_name", type=str, default="medical_o1_reasoning_SFT")
     parser.add_argument("--model_name", type=str, default=models[2])
-    parser.add_argument("--device", type=str, default="cuda:3")
+    parser.add_argument("--device", type=str, default="cuda:1")
     args = parser.parse_args()
 
     return args
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     with open(f'{args.root_path}/data/{args.data_name}/compress_gpt.json') as fin:
         data = json.load(fin)
     random.shuffle(data)
-    n_train = int(len(data) * 0.8)
+    n_train = int(len(data) * 0.9)
     train_data = data[:n_train]
     test_data = data[n_train:]
     query2dict = {}

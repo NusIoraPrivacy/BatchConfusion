@@ -44,9 +44,9 @@ def parse_args():
         help = "max new token for text generation")
     parser.add_argument("--local_cpr", type=str, default=None,
         help = "path of local compression files")
-    parser.add_argument("--remote_cpr", type=str, default="compress_gpt_mask.json",
+    parser.add_argument("--remote_cpr", type=str, default="medical_o1_sft.json",
         help = "path of gpt compression files")
-    parser.add_argument("--data_name", type=str, default="mmlu")
+    parser.add_argument("--data_name", type=str, default="medical_o1_reasoning_SFT")
     parser.add_argument("--gpt_model", type=str, default="gpt-4o-mini")
     args = parser.parse_args()
 

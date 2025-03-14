@@ -21,14 +21,16 @@ def parse_args():
     parser.add_argument("--max_tokens", type=int, default=1000,
         help = "max new token for text generation")
     parser.add_argument("--gpt_model", type=str, default="gpt-4o")
+    parser.add_argument("--data_name", type=str, default="medical_o1_reasoning_SFT")
     args = parser.parse_args()
 
     return args
 
 if __name__ == "__main__":
     args = parse_args()
-    with open(f'{root_path}/data/mmlu/raw_data.json') as fin:
+    with open(f'{args.root_path}/data/{args.data_name}/raw_data.json') as fin:
         data = json.load(fin)
+
     random.shuffle(data)
     client = OpenAI(api_key=_API_KEY)
     output_data = []
@@ -42,7 +44,7 @@ if __name__ == "__main__":
             output = copy.deepcopy(sample)
             output["compression"] = result
             output_data.append(output)
-            with open(f'{args.root_path}/data/mmlu/compress_gpt.json', 'w') as fout:
+            with open(f'{args.root_path}/data/{args.data_name}/compress_gpt.json', 'w') as fout:
                 json.dump(output_data, fout, indent=4)
             pbar.update(1)
             # breaks

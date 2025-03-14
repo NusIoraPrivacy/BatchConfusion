@@ -16,7 +16,7 @@ def create_message(prompt):
         ]
     return messages
     
-def get_response(client, prompt, args):
+def get_response(client, prompt, args, gpt_model=None):
     """
     Obtain response from GPT
     """
@@ -24,13 +24,15 @@ def get_response(client, prompt, args):
     success = False
     cnt = 0
     messages = create_message(prompt)
+    if gpt_model is None:
+        gpt_model = args.gpt_model
     while not success:
         if cnt >= 50:
             rslt = "Error"
             break
         try:
             response = client.chat.completions.create(
-                model=args.gpt_model,
+                model=gpt_model,
                 messages=messages,
                 temperature=args.temperature,
                 max_tokens=args.max_tokens,
@@ -56,7 +58,7 @@ def get_response(client, prompt, args):
         cnt += 1
     return rslt
 
-def get_response_multiprompts(client, prompts, args):
+def get_response_multiprompts(client, prompts, args, gpt_model=None):
     """
     Obtain response from GPT
     """
@@ -70,13 +72,15 @@ def get_response_multiprompts(client, prompts, args):
         role = roles[i]
         this_message = {"role": role, "content": prompt}
         messages.append(this_message)
+    if gpt_model is None:
+        gpt_model = args.gpt_model
     while not success:
         if cnt >= 50:
             rslt = "Error"
             break
         try:
             response = client.chat.completions.create(
-                model=args.gpt_model,
+                model=gpt_model,
                 messages=messages,
                 temperature=args.temperature,
                 max_tokens=args.max_tokens,

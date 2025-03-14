@@ -70,6 +70,14 @@ compress_reflect_template = (
     "#thecompression: your new compression here."
 )
 
+compress_reflect_template_oa = (
+    "The reference answer of the original question is: {ref_ans}, but the previous compressed question returns the following answer with rating {rating} (out of 10): {bad_ans}.\n"
+    "Please evaluate your compression and identify the problem, and propose a new compression.\n"
+    "Stricly provide your answer in the following format:\n"
+    "#theanalysis: your analysis of the previous compression here.\n"
+    "#thecompression: your new compression here."
+)
+
 compress_mask_template = (
     "Compress the given question to short expressions, such that you (GPT-4o) can still correctly answer the question. "
     "Please comply with the guideline below:\n"
@@ -97,3 +105,5 @@ local_compress_template = (
     "If the original question is already short enough or is about fill in the blank, "
     "do not compress and return the original question. Question:"
 )
+
+evaluation_template = "[Instruction]\nPlease act as an impartial judge and evaluate the quality of the response provided by an AI assistant to the user question displayed below. Your evaluation should consider factors such as the helpfulness, relevance, accuracy, depth, creativity, and level of detail of the response. Begin your evaluation by providing a short explanation. Be as objective as possible. After providing your explanation, you must rate the response on a scale of 1 to 10 by strictly following this format: \"[[rating]]\", for example: \"Rating: [[5]]\".\n\n[Question]\n{question}\n\n[The Start of Assistant's Answer]\n{answer}\n[The End of Assistant's Answer]"
