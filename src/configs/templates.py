@@ -17,20 +17,19 @@ old_attr_extract_template = (
 )
 
 attr_extract_template = (
-    "Please extract all words or phrases in the question that indicate sensitive attributes. The sensitive attributes include: \n"
-    "Personal identifiable information, "
+    "Please extract all words or phrases in the question that indicate sensitive attributes.\n"
+    "The sensitive attributes include: Personal identifiable information, "
     "job, race, religion, ethnicity, religion, beliefs, age, contact information, geolocation data, residency and citizenship status, date, festival, URL, "
     "sexual orientation or practices, gender identity, third-person pronoun, disability, employment and income details, company, "
     "physical health and mental health issues, clinical signs including medical conditions and physical examination data, behavioral data, "
-    "name of medicine, including specific drugs, drug classes, and general medication types (e.g., nasal decongestants, antihistamines, beta-blockers, etc),"
+    "name of medicine, including specific drugs, drug classes, and general medication types (e.g., nasal decongestants, antihistamines, beta-blockers, etc), "
     "financial data, vulnerable financial status, account details, loan information, tax records, contract, trading algorithm, confidential business information, "
     "educational records, voting status, membership in a trade union, social media and digital footprint, "
     "legal consultation and case status, Law enforcement jurisdiction and procedures, consumer rights, ownership details, criminal record or name, "
     "biometric data, genetic information, legal proceedings and disputes, surveillance and monitoring data, military and security clearance.\n"
-    "Your task is to strictly extract phrases that refer to these sensitive attributes. Even if a term indirectly refers to a sensitive attribute (e.g., a drug category instead of a specific medicine name), it should be included in the list.\n"
+    "Your task is to strictly extract phrases that refer to these sensitive attributes. Even if a term indirectly refers to a sensitive attribute (e.g., a drug category instead of a specific medicine name), it should be included in the list. The list of sensitive attributes provided is not exhaustive — if you encounter any word or phrase that could reasonably be considered sensitive information under privacy laws or common data protection standards (like GDPR, HIPAA, or similar frameworks), include it in the list. Prioritize any data that could identify a person, describe their personal circumstances, or reveal confidential, medical, financial, or legal information.\n"
     "Please preserve the original words from the user's question to form the attribute list and do not convert full names to abbreviations or abbreviations to full names, and do not add any extra words. Retain all duplicates, regardless of form variations (e.g., burglarize, burglarized, burglarizing).\n"
-    "Please strictly return a list of phrases in the format of [\"attribute 1\", \"attribute 2\", ..., \"attribute n\"].\n"
-    "If there is no sensitive attribute, return an empty list []. Try to identify as much as phrases as possible.\n"
+    "Please strictly return a list of phrases in the format of [\"attribute 1\", \"attribute 2\", ..., \"attribute n\"]. If there is no sensitive attribute, return an empty list []. Try to identify as much as phrases as possible.\n"
     "Example:\n"
     "Question: "
     "A 34-year-old worker (mid-age) is found to have edema, ascites, and hepatosplenomegaly. His temperature is 100\u00b0F (37.8\u00b0C), blood pressure is 97/48 mmHg, pulse is 140/min, respirations are 18/min, and oxygen saturation is 99% on room air. The man smells of alcohol and is covered in emesis. Basic laboratory values are ordered as seen below.\n\nHemoglobin: 6 g/dL\nHematocrit: 20%\nLeukocyte count: 6,500/mm^3 with normal differential\nPlatelet count: 197,000/mm^3\nReticulocyte count: 0.4%\n\nWhich of the following is associated with the most likely diagnosis?\n"
@@ -43,7 +42,7 @@ attr_extract_template = (
     "Question: {question}\n"
     "Sensitive attributes: "
 )
-# add restrictions: return the original term, do not rewrite
+
 
 keyword_extract_template = (
     "Given a query, please extract the key attributes and return a list of key attributes.\n"
