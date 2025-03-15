@@ -1,4 +1,4 @@
-old_attr_extract_template = (
+old_attr_extract_template_1 = (
     "Please extract the sensitive attributes from a question. The sensitive attributes include: \n"
     "Personal identifiable information, "
     "race, religion, ethnicity, religion, beliefs, age, "
@@ -16,7 +16,7 @@ old_attr_extract_template = (
     "Sensitive attributes: "
 )
 
-attr_extract_template = (
+old_attr_extract_template_2 = (
     "Please extract all words or phrases in the question that indicate sensitive attributes.\n"
     "The sensitive attributes include: Personal identifiable information, "
     "job, race, religion, ethnicity, religion, beliefs, age, contact information, geolocation data, residency and citizenship status, date, festival, URL, "
@@ -39,6 +39,24 @@ attr_extract_template = (
     "A 19-year-old girl with a history of repeated pain over the medial canthus and chronic use of nasal decongestants presents with an abrupt onset of fever with chills and rigor, diplopia on lateral gaze, moderate proptosis, chemosis, and a congested optic disc on examination. Based on these symptoms, what is the most likely diagnosis?\n"
     "Sensitive attributes: "
     "[\"19-year-old\", \"girl\", \"repeated pain\", \"medial canthus\", \"chronic use\", \"nasal decongestants\", \"fever\", \"chills\", \"rigor\", \"diplopia\", \"moderate proptosis\", \"chemosis\", \"congested optic disc\"]"
+    "Question: {question}\n"
+    "Sensitive attributes: "
+)
+
+attr_extract_template = (
+    "Please extract all words or phrases in the question that indicate sensitive attributes.\n"
+    "The sensitive attributes include: Personal identifiable information, "
+    "job, race, religion, ethnicity, religion, beliefs, age, contact information, geolocation data, residency and citizenship status, date, festival, URL, "
+    "sexual orientation or practices, gender identity, third-person pronoun, disability, employment and income details, company, "
+    "physical health and mental health issues, clinical signs including medical conditions and physical examination data, behavioral data, "
+    "name of medicine, including specific drugs, drug classes, and general medication types (e.g., nasal decongestants, antihistamines, beta-blockers, etc), "
+    "financial data, vulnerable financial status, account details, loan information, tax records, contract, trading algorithm, confidential business information, "
+    "educational records, voting status, membership in a trade union, social media and digital footprint, "
+    "legal consultation and case status, Law enforcement jurisdiction and procedures, consumer rights, ownership details, criminal record or name, "
+    "biometric data, genetic information, legal proceedings and disputes, surveillance and monitoring data, military and security clearance.\n"
+    "Your task is to strictly extract phrases that refer to these sensitive attributes. Even if a term indirectly refers to a sensitive attribute (e.g., a drug category instead of a specific medicine name), it should be included in the list. The list of sensitive attributes provided is not exhaustive — if you encounter any word or phrase that could reasonably be considered sensitive information under privacy laws or common data protection standards (like GDPR, HIPAA, or similar frameworks), include it in the list. Prioritize any data that could identify a person, describe their personal circumstances, or reveal confidential, medical, financial, or legal information.\n"
+    "Please preserve the original words from the user's question to form the attribute list and do not convert full names to abbreviations or abbreviations to full names, and do not add any extra words. Retain all duplicates, regardless of form variations (e.g., burglarize, burglarized, burglarizing).\n"
+    "Please strictly return a list of phrases in the format of [\"attribute 1\", \"attribute 2\", ..., \"attribute n\"]. If there is no sensitive attribute, return an empty list []. Try to identify as much as phrases as possible.\n"
     "Question: {question}\n"
     "Sensitive attributes: "
 )
