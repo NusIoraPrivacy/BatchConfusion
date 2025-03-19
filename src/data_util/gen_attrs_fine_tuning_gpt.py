@@ -2,15 +2,21 @@ from data_util.gpt_utils import get_response
 from configs.data_configs import *
 from configs.templates import attr_extract_template # test new prompt
 from configs.key import _API_KEY
+from configs.common_words import common_words
 
 from openai import OpenAI
 import json
 import copy
+from nltk.stem import PorterStemmer
 import argparse
 import os
 from tqdm import tqdm
 current = os.path.dirname(os.path.realpath(__file__))
 root_path = os.path.dirname(os.path.dirname(current))
+
+stemmer = PorterStemmer()
+common_stems = {stemmer.stem(word) for word in common_words}
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -66,6 +72,19 @@ if __name__ == "__main__":
                 if success:
                     output = copy.deepcopy(sample)
                     output["private attributes"] = result
+                    
+                    # filter out common words
+                    filtered_result = []
+                    for word in result:
+                        if type(word) == int:
+                            print(word)
+                            filtered_result.append(word)
+                        elif stemmer.stem(word) not in common_stems:
+                            filtered_result.append(word)
+                    
+                    # Remove duplicates while preserving order
+                    output["filtered private attributes"] = list(dict.fromkeys(filtered_result))
+                    
                     output_data.append(output)
                     with open(f'{args.root_path}/data/{output_path}', 'w', encoding="utf-8") as fout: # output new data
                         json.dump(output_data, fout, indent=4, ensure_ascii=False)
