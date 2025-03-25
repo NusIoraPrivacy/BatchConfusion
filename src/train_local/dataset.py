@@ -40,7 +40,8 @@ class CompressDataset(Dataset):
             )
             # print(prefix_id)
             # create input ids
-            text = query + compression
+            text = query + compression + self.tokenizer.eos_token
+            # print(text)
             input_id = torch.tensor(
                 self.tokenizer.encode(text), dtype=torch.int64
             )
@@ -52,7 +53,7 @@ class CompressDataset(Dataset):
             label_id[:(len(prefix_id)-1)] = -1
             label_mask = label_id.ge(0)
             label_id[~label_mask] = IGNORE_INDEX
-            print(label_id)
+            # print(label_id)
 
             if self.pad:
                 prefix_id = self.pad_token(prefix_id)

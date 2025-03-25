@@ -15,7 +15,7 @@ import argparse
 current = os.path.dirname(os.path.realpath(__file__))
 root_path = os.path.dirname(os.path.dirname(current))
 
-models = ["Qwen/Qwen2.5-1.5B-Instruct", "meta-llama/Llama-3.2-1B", "meta-llama/Llama-3.1-8B"]
+models = ["Qwen/Qwen2.5-1.5B-Instruct", "meta-llama/Llama-3.2-1B", "meta-llama/Llama-3.1-8B", "princeton-nlp/gemma-2-9b-it-SimPO"]
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -25,12 +25,12 @@ def parse_args():
     parser.add_argument("--max_tokens", type=int, default=1000,
         help = "max new token for text generation")
     parser.add_argument("--token_len", type=int, default=512)
-    parser.add_argument("--train_batch_size", type=int, default=2)
-    parser.add_argument("--test_batch_size", type=int, default=4)
+    parser.add_argument("--train_batch_size", type=int, default=1)
+    parser.add_argument("--test_batch_size", type=int, default=2)
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--gpt_model", type=str, default="gpt-4o")
-    parser.add_argument("--data_name", type=str, default="mmlu")
+    parser.add_argument("--data_name", type=str, default="medical_o1_reasoning_SFT")
     parser.add_argument("--model_name", type=str, default=models[0])
     parser.add_argument("--test_only", type=bool, default=False)
     args = parser.parse_args()
@@ -111,7 +111,7 @@ if __name__ == "__main__":
                     avg_loss = sum(loss_list)/len(loss_list)
                     pbar.set_postfix(loss=avg_loss)
                     # break
-        
+
         output_data = []
         with tqdm(total=len(test_dataloader)) as pbar:
             for step, batch in enumerate(test_dataloader):
@@ -127,9 +127,7 @@ if __name__ == "__main__":
                         )
                 
                 queries = tokenizer.batch_decode(batch["query_ids"], skip_special_tokens=True)
-                # prompts = tokenizer.batch_decode(batch["input_ids"], skip_special_tokens=True)
                 raw_y_preds = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
-                # print(raw_y_preds)
                 
                 for query, pred in zip(queries, raw_y_preds):
                     question = query.replace(local_compress_template, "")

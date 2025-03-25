@@ -28,7 +28,7 @@ def parse_args():
         help = "temperature for text generation")
     parser.add_argument("--max_tokens", type=int, default=1000,
         help = "max new token for text generation")
-    parser.add_argument("--local_cpr", type=str, default=None,
+    parser.add_argument("--local_cpr", type=str, default="compression/gemma-2-9b-it-SimPO/epoch_2.json",
         help = "path of local compression files")
     parser.add_argument("--remote_cpr", type=str, default="compress_gpt.json",
         help = "path of gpt compression files")
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     else:
         with open(f'{args.root_path}/result/{args.data_name}/{args.local_cpr}') as fin:
             data = json.load(fin)
-    # print(len(data))
+    print(len(data))
     one_score_pattern = re.compile("\[\[(\d+\.?\d*)\]\]")
     one_score_pattern_backup = re.compile("\[(\d+\.?\d*)\]")
     client = OpenAI(api_key=_API_KEY)
@@ -66,13 +66,52 @@ if __name__ == "__main__":
     output_path = f'{output_dir}/answer_{args.gpt_model}{local_suffix}.json'
     output_data = []
     # ref_answers, predictions = [], []
-    rougeLs, blues, ratings = [], [], []
+    org_rougeLs, org_blues, org_ratings, cpr_rougeLs, cpr_blues, cpr_ratings = [], [], [], [], [], []
     with tqdm(total=len(data), unit='batch') as pbar:
         for i, sample in enumerate(data):
+            output = copy.deepcopy(sample)
             original_query, ref_answer, compress_query = sample["question"], sample["response"], sample["compression"]
             # print(original_query)
             if args.local_cpr is not None:
                 compress_query = sample["predicted compression"]
+            # original prediction
+            if args.local_cpr is None:
+                pred = get_response(client, original_query, args)
+                # print(pred)
+                try:
+                    score = rouge_scorer.get_scores(hyps=pred, refs=ref_answer)
+                    rougeL = score[0]["rouge-l"]["f"]
+                except ValueError as e:
+                        rougeL = 0
+                try:
+                    blue_score = bleu_scorer.sentence_score(hypothesis=pred, references=[ref_answer])
+                    blue = blue_score.score/100
+                except ValueError as e:
+                    blue = 0
+                org_rougeLs.append(rougeL)
+                org_blues.append(blue)
+                avg_org_rougeL = sum(org_rougeLs)/len(org_rougeLs)
+                avg_org_blue = sum(org_blues)/len(org_blues)
+
+                output["compress_prediction"] = pred
+                
+                prompt = evaluation_template.format(question=original_query, answer=pred)
+                _eval = get_response(client, prompt, args, args.eval_gpt_model)
+                # print(_eval)
+                match = re.search(one_score_pattern, _eval)
+                if not match:
+                    match = re.search(one_score_pattern_backup, _eval)
+
+                if match:
+                    rating = ast.literal_eval(match.groups()[0])
+                else:
+                    rating = -1
+                if rating >= 0:
+                    org_ratings.append(rating)
+                output["origin_rating"] = rating
+                avg_org_rating = sum(org_ratings)/len(org_ratings)
+
+            # compression prediction
             pred = get_response(client, compress_query, args)
             # print(pred)
             # ref_answers.append(ref_answer)
@@ -87,12 +126,11 @@ if __name__ == "__main__":
                 blue = blue_score.score/100
             except ValueError as e:
                 blue = 0
-            rougeLs.append(rougeL)
-            blues.append(blue)
-            avg_rougeL = sum(rougeLs)/len(rougeLs)
-            avg_blue = sum(blues)/len(blues)
+            cpr_rougeLs.append(rougeL)
+            cpr_blues.append(blue)
+            avg_cpr_rougeL = sum(cpr_rougeLs)/len(cpr_rougeLs)
+            avg_cpr_blue = sum(cpr_blues)/len(cpr_blues)
             
-            output = copy.deepcopy(sample)
             output["compress_prediction"] = pred
             
             prompt = evaluation_template.format(question=original_query, answer=pred)
@@ -107,12 +145,16 @@ if __name__ == "__main__":
             else:
                 rating = -1
             if rating >= 0:
-                ratings.append(rating)
-            output_data.append(output)
+                cpr_ratings.append(rating)
             output["compress_rating"] = rating
-            avg_rating = sum(ratings)/len(ratings)
-            pbar.set_postfix(blue=avg_blue, rougeL=avg_rougeL, rating=avg_rating)
+            output_data.append(output)
+            avg_cpr_rating = sum(cpr_ratings)/len(cpr_ratings)
+            if args.local_cpr is None:
+                pbar.set_postfix(org_blue=avg_org_blue, org_rougeL=avg_org_rougeL, org_rating=avg_org_rating, cpr_blue=avg_cpr_blue, cpr_rougeL=avg_cpr_rougeL, cpr_rating=avg_cpr_rating)
+            else:
+                pbar.set_postfix(cpr_blue=avg_cpr_blue, cpr_rougeL=avg_cpr_rougeL, cpr_rating=avg_cpr_rating)
             pbar.update(1)
-            if (i+1) % 10 == 0:
+            # if (i+1) % 10 == 0:
+            if i % 10 == 0 or (i+1) == len(data):
                 with open(output_path, 'w') as fout:
                     json.dump(output_data, fout, indent=4)

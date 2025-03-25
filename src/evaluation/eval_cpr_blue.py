@@ -8,8 +8,9 @@ current = os.path.dirname(os.path.realpath(__file__))
 root_path = os.path.dirname(os.path.dirname(current))
 
 if __name__ == "__main__":
-    models = ["bart-large", "t5-large", "flan-t5-large"]
-    data_name = "mmlu"
+    models = ["bart-large", "t5-large", "flan-t5-large", "gemma-2-9b-it-SimPO"]
+    # models = ["gemma-2-9b-it-SimPO"]
+    data_name = "medical_o1_reasoning_SFT"
     bleu_scorer = BLEU(effective_order=True)
     rouge_scorer = Rouge()
     for model in models:

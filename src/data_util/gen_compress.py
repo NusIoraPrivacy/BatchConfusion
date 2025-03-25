@@ -21,21 +21,31 @@ def parse_args():
     parser.add_argument("--max_tokens", type=int, default=1000,
         help = "max new token for text generation")
     parser.add_argument("--gpt_model", type=str, default="gpt-4o")
-    parser.add_argument("--data_name", type=str, default="medical_o1_reasoning_SFT")
+    parser.add_argument("--data_name", type=str, default="legal-qa-v1")
+    parser.add_argument("--file_name", type=str, default="legal_qa_v1_attr_2000_filteres.json")
     args = parser.parse_args()
 
     return args
 
 if __name__ == "__main__":
     args = parse_args()
-    with open(f'{args.root_path}/data/{args.data_name}/raw_data.json') as fin:
+    with open(f'{args.root_path}/data/{args.data_name}/{args.file_name}') as fin:
         data = json.load(fin)
-
+    # print(len(data))
     random.shuffle(data)
     client = OpenAI(api_key=_API_KEY)
     output_data = []
     with tqdm(total=len(data), unit='batch') as pbar:
         for sample in data:
+            new_sample = {}
+            for key in sample:
+                if key == "Question":
+                    new_sample["question"] = sample["Question"]
+                elif key == "Answer":
+                    new_sample["response"] = sample["Answer"]
+                else:
+                    new_sample[key] = sample[key]
+            sample = new_sample
             question = sample["question"]
             prompt = compress_template.format(question=question)
             # print(prompt)

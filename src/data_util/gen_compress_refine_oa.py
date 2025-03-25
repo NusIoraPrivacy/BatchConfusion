@@ -46,7 +46,7 @@ def parse_args():
         help = "max new token for text generation")
     parser.add_argument("--gpt_model", type=str, default="gpt-4o-mini")
     parser.add_argument("--gpt_model_eval", type=str, default="gpt-4o")
-    parser.add_argument("--data_name", type=str, default="medical_o1_reasoning_SFT")
+    parser.add_argument("--data_name", type=str, default="legal-qa-v1")
     parser.add_argument("--rating_thd", type=int, default=7)
     args = parser.parse_args()
 
@@ -66,9 +66,9 @@ if __name__ == "__main__":
     with tqdm(total=len(data), unit='batch') as pbar:
         ratings = []
         for sample in data:
-            org_question, cpr_question, ref_ans, cpr_pred, rating = sample["question"], sample["compression"], sample["response"], sample["compress_prediction"], sample["compress_rating"]
+            org_question, cpr_question, ref_ans, cpr_pred, org_rating, cpr_rating = sample["question"], sample["compression"], sample["response"], sample["compress_prediction"], sample["origin_rating"], sample["compress_rating"]
             output = copy.deepcopy(sample)
-            if rating <= args.rating_thd:
+            if cpr_rating <= org_rating:
                 success = False
                 n_try = 0
                 prompt_old = compress_template.format(question=org_question)
@@ -93,11 +93,11 @@ if __name__ == "__main__":
                         match = re.search(one_score_pattern_backup, _eval)
 
                     if match:
-                        rating = ast.literal_eval(match.groups()[0])
+                        cpr_rating = ast.literal_eval(match.groups()[0])
                     else:
-                        rating = -1
+                        cpr_rating = -1
 
-                    if rating > args.rating_thd:
+                    if cpr_rating >= org_rating:
                         success = True
                     n_try += 1
                     if n_try >= 5:
@@ -105,9 +105,9 @@ if __name__ == "__main__":
                 # print(compress_pred)
                 output["compression"] = cpr_question
                 output["compress_prediction"] = cpr_pred
-                output["compress_rating"] = rating
+                output["compress_rating"] = cpr_rating
                 
-                ratings.append(rating)
+                ratings.append(cpr_rating)
                 avg_rating = sum(ratings)/len(ratings)
                 pbar.set_postfix(rating=avg_rating)
             output_data.append(output)
