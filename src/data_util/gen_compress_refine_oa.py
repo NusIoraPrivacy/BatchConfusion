@@ -46,15 +46,17 @@ def parse_args():
         help = "max new token for text generation")
     parser.add_argument("--gpt_model", type=str, default="gpt-4o-mini")
     parser.add_argument("--gpt_model_eval", type=str, default="gpt-4o")
-    parser.add_argument("--data_name", type=str, default="legal-qa-v1")
+    parser.add_argument("--data_name", type=str, default="medical_o1_reasoning_SFT")
     parser.add_argument("--rating_thd", type=int, default=7)
+    parser.add_argument("--in_file_name", type=str, default="cpr_new990.json")
+    parser.add_argument("--out_file_name", type=str, default="compress_gpt_new990.json")
     args = parser.parse_args()
 
     return args
 
 if __name__ == "__main__":
     args = parse_args()
-    with open(f'{root_path}/result/{args.data_name}/answer_gpt-4o-mini.json') as fin:
+    with open(f'{root_path}/result/{args.data_name}/{args.in_file_name}') as fin:
         data = json.load(fin)
     # random.shuffle(data)
     client = OpenAI(api_key=_API_KEY)
@@ -68,7 +70,7 @@ if __name__ == "__main__":
         for sample in data:
             org_question, cpr_question, ref_ans, cpr_pred, org_rating, cpr_rating = sample["question"], sample["compression"], sample["response"], sample["compress_prediction"], sample["origin_rating"], sample["compress_rating"]
             output = copy.deepcopy(sample)
-            if cpr_rating <= org_rating:
+            if cpr_rating < org_rating:
                 success = False
                 n_try = 0
                 prompt_old = compress_template.format(question=org_question)
@@ -76,7 +78,7 @@ if __name__ == "__main__":
                 while not success:
                     # obtain new compression result
                     prompts.append(cpr_question)
-                    prompt_new = compress_reflect_template_oa.format(ref_ans=ref_ans, rating=rating, bad_ans=cpr_pred)
+                    prompt_new = compress_reflect_template_oa.format(ref_ans=ref_ans, rating=cpr_rating, bad_ans=cpr_pred)
                     prompts.append(prompt_new)
                     result = get_response_multiprompts(client, prompts, args)
                     # print(result)
@@ -111,6 +113,6 @@ if __name__ == "__main__":
                 avg_rating = sum(ratings)/len(ratings)
                 pbar.set_postfix(rating=avg_rating)
             output_data.append(output)
-            with open(f'{args.root_path}/result/{args.data_name}/compress_{args.gpt_model}_v2.json', 'w') as fout:
+            with open(f'{args.root_path}/result/{args.data_name}/{args.out_file_name}', 'w') as fout:
                 json.dump(output_data, fout, indent=4)
             pbar.update(1)

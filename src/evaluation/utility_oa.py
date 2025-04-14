@@ -28,13 +28,14 @@ def parse_args():
         help = "temperature for text generation")
     parser.add_argument("--max_tokens", type=int, default=1000,
         help = "max new token for text generation")
-    parser.add_argument("--local_cpr", type=str, default="compression/gemma-2-9b-it-SimPO/epoch_2.json",
+    parser.add_argument("--local_cpr", type=str, default=None,
         help = "path of local compression files")
-    parser.add_argument("--remote_cpr", type=str, default="compress_gpt.json",
+    parser.add_argument("--remote_cpr", type=str, default="compress_gpt_new990.json",
         help = "path of gpt compression files")
     parser.add_argument("--data_name", type=str, default="medical_o1_reasoning_SFT")
     parser.add_argument("--gpt_model", type=str, default="gpt-4o-mini")
     parser.add_argument("--eval_gpt_model", type=str, default="gpt-4o")
+    parser.add_argument("--out_file_name", type=str, default="cpr_new990.json")
     args = parser.parse_args()
 
     return args
@@ -63,7 +64,10 @@ if __name__ == "__main__":
     output_dir = f"{args.root_path}/result/{args.data_name}"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    output_path = f'{output_dir}/answer_{args.gpt_model}{local_suffix}.json'
+    if args.out_file_name is None:
+        output_path = f'{output_dir}/answer_{args.gpt_model}{local_suffix}.json'
+    else:
+        output_path = f'{output_dir}/{args.out_file_name}'
     output_data = []
     # ref_answers, predictions = [], []
     org_rougeLs, org_blues, org_ratings, cpr_rougeLs, cpr_blues, cpr_ratings = [], [], [], [], [], []

@@ -21,15 +21,16 @@ def parse_args():
     parser.add_argument("--max_tokens", type=int, default=1000,
         help = "max new token for text generation")
     parser.add_argument("--gpt_model", type=str, default="gpt-4o")
-    parser.add_argument("--data_name", type=str, default="legal-qa-v1")
-    parser.add_argument("--file_name", type=str, default="legal_qa_v1_attr_2000_filteres.json")
+    parser.add_argument("--data_name", type=str, default="medical_o1_reasoning_SFT")
+    parser.add_argument("--in_file_name", type=str, default="compress_raw_100.json")
+    parser.add_argument("--out_file_name", type=str, default="compress_gpt_new990.json")
     args = parser.parse_args()
 
     return args
 
 if __name__ == "__main__":
     args = parse_args()
-    with open(f'{args.root_path}/data/{args.data_name}/{args.file_name}') as fin:
+    with open(f'{args.root_path}/data/{args.data_name}/{args.in_file_name}') as fin:
         data = json.load(fin)
     # print(len(data))
     random.shuffle(data)
@@ -54,7 +55,7 @@ if __name__ == "__main__":
             output = copy.deepcopy(sample)
             output["compression"] = result
             output_data.append(output)
-            with open(f'{args.root_path}/data/{args.data_name}/compress_gpt.json', 'w') as fout:
+            with open(f'{args.root_path}/data/{args.data_name}/{args.out_file_name}', 'w') as fout:
                 json.dump(output_data, fout, indent=4)
             pbar.update(1)
             # breaks
