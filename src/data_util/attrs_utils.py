@@ -1,6 +1,7 @@
 import json
 import copy
 import os
+import re
 import argparse
 from tqdm import tqdm
 from nltk.stem import PorterStemmer
@@ -115,10 +116,16 @@ def generate_attributes(input_path, output_path, key_name = 'Question', output_k
                 # filter out common words
                 filtered_result = []
                 for word in result:
-                    # if not isinstance(word, str):
-                    #     filtered_result.append(str(word))
-                    if stemmer.stem(str(word)) not in common_stems:
-                        filtered_result.append(str(word))
+                    if not isinstance(word, str):
+                        word = str(word)
+                    word = re.sub(r'_+', '', word).strip()
+                    word = re.sub(r'\s+', ' ', word).strip()
+                    
+                    if not word:
+                        continue
+                    
+                    if stemmer.stem(word) not in common_stems:
+                        filtered_result.append(word)
                 
                 # Remove duplicates while preserving order
                 output[f"filtered {output_key_name}"] = list(dict.fromkeys(filtered_result))
@@ -291,7 +298,7 @@ def generate_fake_attributes_multi(input_path, output_path,
 
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # Generate attributes
     # key_name = 'compression', output_key_name = "private attributes compression"
     # key_name = 'question', output_key_name = "private attributes question"
@@ -299,6 +306,10 @@ if __name__ == "__main__":
     # generate_attributes(f'{root_path}/data/medical_o1_reasoning_SFT/compress_gpt_new990_qattr_1.json', f'{root_path}/data/medical_o1_reasoning_SFT/compress_gpt_new990_qcattr_1.json', key_name = 'compression', output_key_name = "private attributes compression")
     
     # generate_attributes(f'{root_path}/data/legal-qa-v1/compress_gpt.json', f'{root_path}/data/legal-qa-v1/compress_gpt_qcattr.json', key_name = 'compression', output_key_name = "private attributes compression")
+    
+    # Generate filtered attributes for fina_mmlu
+    # key_name = 'question', output_key_name = "private attributes question"
+    # generate_attributes(f'{root_path}/data/mmlu_fina/fina_raw_data.json', f'{root_path}/data/mmlu_fina/fina_raw_data_qattr.json', key_name = 'question', output_key_name = "private attributes question")
     
     # _____________________________________________________________________________________________________________
     # Generate fake attributes
@@ -332,50 +343,3 @@ if __name__ == "__main__":
     # o3-------------------------------   ignore   -----------------------------------
     
     # generate_fake_attributes_multi(f'{root_path}/data/legal-qa-v1/compress_gpt_fake_qcattr.json', f'{root_path}/data/legal-qa-v1/compress_gpt_fake_qcattr_multi_q1_3o.json', key_name_context='question', key_name_attrs='filtered private attributes', prev_fake_attrs ='fake attributes question', output_key_name='fake attributes question', num_rounds= 1, model = "o3-mini-2025-01-31", get_response = get_response_o3)
-    
-    # with open(f'{root_path}/data/legal-qa-v1/compress_fake_cattr_multi_4omini_4.json', 'r', encoding="utf-8") as fin:
-    #     data_1 = json.load(fin)
-    #     print(len(data_1))
-    
-    # with open(f'{root_path}/data/legal-qa-v1/compress_fake_cattr_multi_4omini_3_1717.json', 'r', encoding="utf-8") as fin:
-    #     data_2 = json.load(fin)
-    #     print(len(data_2))
-        
-    
-    # combined_data = data_1 + data_2
-    # print(len(combined_data))
-    
-    # with open(f'{root_path}/data/legal-qa-v1/compress_fake_cattr_multi_4omini_3_all.json', 'w', encoding="utf-8") as fout:
-    #     json.dump(combined_data, fout, indent=4, ensure_ascii=False)
-    
-    # with open(f'{root_path}/data/legal-qa-v1/compress_fake_cattr_multi_4omini_3_all.json', 'r', encoding="utf-8") as fin:
-    #     data = json.load(fin)
-    #     print(len(data))
-    
-    # with open(f'{root_path}/data/legal-qa-v1/compress_fake_qattr_multi_4omini_2.json', 'r', encoding="utf-8") as fin:
-    #     data1 = json.load(fin)
-    #     # print(len(data1))
-    
-    # with open(f'{root_path}/data/legal-qa-v1/compress_fake_qattr_multi_4omini_2_785.json', 'r', encoding="utf-8") as fin:
-    #     data2 = json.load(fin)
-    #     print(len(data2))
-    
-    # with open(f'{root_path}/data/legal-qa-v1/compress_fake_qattr_multi_4omini_2_867.json', 'r', encoding="utf-8") as fin:
-    #     data3 = json.load(fin)
-    #     print(len(data3))
-    
-    # with open(f'{root_path}/data/legal-qa-v1/compress_fake_qattr_multi_4omini_2_1734.json', 'r', encoding="utf-8") as fin:
-    #     data4 = json.load(fin)
-    #     print(len(data4))
-    
-    # # print(len(data1) + len(data2) + len(data3) + len(data4))
-    
-    # combined_data = data1 + data2 + data3 + data4
-    # print(len(combined_data))
-    
-    # with open(f'{root_path}/data/legal-qa-v1/compress_fake_qattr_multi_4omini_2_all.json', 'w', encoding="utf-8") as fout:
-    #     json.dump(combined_data, fout, indent=4, ensure_ascii=False)
-    
-    # with open(f'{root_path}/data/medical_o1_reasoning_SFT/compress_fake_cattr_multi_4omini_4.json', 'r', encoding="utf-8") as fin:
-    #     data3 = json.load(fin)
-    #     print(data3[163])
