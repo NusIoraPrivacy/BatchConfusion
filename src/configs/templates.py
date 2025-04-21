@@ -29,6 +29,7 @@ attr_extract_template = (
     "legal consultation and case status, Law enforcement jurisdiction and procedures, consumer rights, ownership details, criminal record or name, "
     "biometric data, genetic information, legal proceedings and disputes, surveillance and monitoring data, military and security clearance.\n"
     "Your task is to strictly extract phrases that refer to these sensitive attributes. Even if a term indirectly refers to a sensitive attribute (e.g., a drug category instead of a specific medicine name), it should be included in the list. The list of sensitive attributes provided is not exhaustive — if you encounter any word or phrase that could reasonably be considered sensitive information under privacy laws or common data protection standards (like GDPR, HIPAA, or similar frameworks), include it in the list. Prioritize any data that could identify a person, describe their personal circumstances, or reveal confidential, medical, financial, or legal information.\n"
+    "Please ignore any sequence of two or more underscores (e.g., \"_______\") in the input; remove these underscores before extracting attributes and do not treat them as attributes.\n"
     "Please preserve the original words from the user's question to form the attribute list and do not convert full names to abbreviations or abbreviations to full names, and do not add any extra words. Retain all duplicates, regardless of form variations (e.g., burglarize, burglarized, burglarizing).\n"
     "Please strictly return a list of phrases in the format of [\"attribute 1\", \"attribute 2\", ..., \"attribute n\"]. If there is no sensitive attribute, return an empty list []. Try to identify as much as phrases as possible.\n"
     "Question: {question}\n"
@@ -152,6 +153,15 @@ compress_reflect_template_oa = (
     "#thecompression: your new compression here."
 )
 
+compress_reflect_template_oa_v2 = (
+    "The reference answer of the original question is: {ref_ans}, while the previous compressed question returns the following answer: {bad_ans}.\n"
+    "Please evaluate your compression and identify the problem, and propose a new compression.\n"
+    "If the previous compression misses important background information, please keep the information in the new compression.\n"
+    "Stricly provide your answer in the following format:\n"
+    "#theanalysis: your analysis of the previous compression here.\n"
+    "#thecompression: your new compression here."
+)
+
 compress_mask_template = (
     "Compress the given question to short expressions, such that you (GPT-4o) can still correctly answer the question. "
     "Please comply with the guideline below:\n"
@@ -181,3 +191,23 @@ local_compress_template = (
 )
 
 evaluation_template = "[Instruction]\nPlease act as an impartial judge and evaluate the quality of the response provided by an AI assistant to the user question displayed below. Your evaluation should consider factors such as the helpfulness, relevance, accuracy, depth, creativity, and level of detail of the response. Begin your evaluation by providing a short explanation. Be as objective as possible. After providing your explanation, you must rate the response on a scale of 1 to 10 by strictly following this format: \"[[rating]]\", for example: \"Rating: [[5]]\".\n\n[Question]\n{question}\n\n[The Start of Assistant's Answer]\n{answer}\n[The End of Assistant's Answer]"
+
+phrase_replace_template = (
+    "Given an attribute, please return a list of attributes meeting the following criteria:"
+    " 1. The genearted words should under the same category of the original attribute but with strictly distinct meanings.\n"
+    " 2. Numerical Handling:"
+    "     - If the original attribute is primarily numerical (e.g., percentages, durations, counts), generate fake numerical attributes that have broader variance to reduce guessability."
+    "     - Avoid clustering numbers closely around the original value."
+    "     - Avoid adding unnecessary descriptive context (e.g., avoid turning '50%' into '55% of alternative components'). Instead, generate standalone numerical words like '20%', '90%', or '10%'."
+    "     - Do not introduce numerical values if the original attribute is non-numerical in any form. (e.g. aviod turning 'internship period' into '3 months')\n"
+    " 3. Sound Sensitive and Relaiable:"
+    "     - The alternative attributes should resemble private, confidential, or sensitive concepts, particularly in legal, medical, or financial domains."
+    "     - Generated alternative attributes actually exist in real-world literature.\n"
+    " 4. No Rephrasings or Simple Synonyms: Avoid generating superficial rephrasings or synonyms (e.g., do not turn '80 years' into 'eight decades'):"
+    "     - Create attributes that keep contextual depth and believability."
+    "     - Do not generate fakes by slightly modifying words."
+    "     - The genearted word should under the same category of the original attribute but with strictly distinct meanings.\n"
+    " 5. Ensure that the alternative attributes are diverse and do not share common themes or patterns.\n"
+    "Input phrase: {phrase}\n"
+    'Please return a list of alternative phrases strictly in the format of ["Attr 1", "Attr 2", ..., "Attr n"].'
+)
