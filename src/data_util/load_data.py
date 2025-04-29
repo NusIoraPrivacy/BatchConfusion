@@ -34,14 +34,23 @@ def creat_mmlu_cat_data(cat_dict):
     return filter_data
 
 if __name__ == "__main__":
-    cat_dict = {"business": ["business_ethics", "marketing"],
-            "legal": ["international_law", "jurisprudence", "professional_law"],
-            "politics": ["us_foreign_policy", "high_school_government_and_politics"],
-            "medicine": ["college_medicine", "clinical_knowledge", "nutrition", "professional_psychology", "high_school_psychology", "professional_medicine"],
-            "religion": ["world_religions"]
-            }
+    # cat_dict = {"business": ["business_ethics", "marketing"],
+    #         "legal": ["international_law", "jurisprudence", "professional_law"],
+    #         "politics": ["us_foreign_policy", "high_school_government_and_politics"],
+    #         "medicine": ["college_medicine", "clinical_knowledge", "nutrition", "professional_psychology", "high_school_psychology", "professional_medicine"],
+    #         "religion": ["world_religions"]
+    #         }
+    # data = creat_mmlu_cat_data(cat_dict)
+    # with open(f'{root_path}/data/mmlu/raw_data.json', 'w') as fout:
+    #     json.dump(data, fout, indent=4)
+    # print(data[:5])
+    # print(len(data))
+    
+    
+    cat_dict = {"business": ["business_ethics", "econometrics", "marketing", "high_school_macroeconomics", "high_school_microeconomics", "management", "marketing"]}
+    # cat_dict = {"business": ["business_ethics"]}
     data = creat_mmlu_cat_data(cat_dict)
-    with open(f'{root_path}/data/mmlu/raw_data.json', 'w') as fout:
+    with open(f'{root_path}/data/mmlu_fina/fina_raw_data.json', 'w') as fout:
         json.dump(data, fout, indent=4)
     print(data[:5])
     print(len(data))

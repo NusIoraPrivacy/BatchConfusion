@@ -41,7 +41,7 @@ def get_prediction(query, choices, client, args):
                 f"A: {choices[0]}\n B: {choices[1]}\n C: {choices[2]}\n D: {choices[3]}"
                 "Remember to output only a single character from A to D!")
     # print(prompt)
-    raw_pred = get_response(client, prompt, args)
+    raw_pred = get_response(client, prompt, args, args.gpt_model_resp)
     # print(raw_pred)
     pred = standard_ans(raw_pred, candidate_answers)
     return pred
@@ -54,13 +54,15 @@ def parse_args():
     parser.add_argument("--max_tokens", type=int, default=1000,
         help = "max new token for text generation")
     parser.add_argument("--gpt_model", type=str, default="gpt-4o")
+    parser.add_argument("--gpt_model_resp", type=str, default="gpt-4o-mini")
+    parser.add_argument("--data_name", type=str, default="mmlu_fina")
     args = parser.parse_args()
 
     return args
 
 if __name__ == "__main__":
     args = parse_args()
-    with open(f'{root_path}/result/mmlu/answer_gpt-4o-mini.json') as fin:
+    with open(f'{root_path}/result/{args.data_name}/answer_gpt-4o-mini.json') as fin:
         data = json.load(fin)
     random.shuffle(data)
     client = OpenAI(api_key=_API_KEY)
@@ -71,8 +73,14 @@ if __name__ == "__main__":
     with tqdm(total=len(data), unit='batch') as pbar:
         for sample in data:
             org_question, cpr_question, answer, org_pred, cpr_pred = sample["question"], sample["compression"], sample["answer"], sample["origin_pred"], sample["compress_pred"]
-            org_pred = candidate_answers.index(org_pred)
-            cpr_pred = candidate_answers.index(cpr_pred)
+            try:
+                org_pred = candidate_answers.index(org_pred)
+            except:
+                org_pred = 0
+            try:
+                cpr_pred = candidate_answers.index(cpr_pred)
+            except:
+                cpr_pred = 0
             output = copy.deepcopy(sample)
             if org_pred != cpr_pred and org_pred == answer:
                 choices = sample["choices"]
@@ -109,6 +117,6 @@ if __name__ == "__main__":
                 f1 = f1_score(labels, predictions, average="macro")
                 pbar.set_postfix(acc=acc, f1=f1)
             output_data.append(output)
-            with open(f'{args.root_path}/result/mmlu/compress_{args.gpt_model}_v2.json', 'w') as fout:
+            with open(f'{args.root_path}/result/{args.data_name}/compress_{args.gpt_model}_v2.json', 'w') as fout:
                 json.dump(output_data, fout, indent=4)
             pbar.update(1)

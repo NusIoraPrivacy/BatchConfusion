@@ -21,9 +21,9 @@ def parse_args():
     parser.add_argument("--max_tokens", type=int, default=1000,
         help = "max new token for text generation")
     parser.add_argument("--gpt_model", type=str, default="gpt-4o")
-    parser.add_argument("--data_name", type=str, default="medical_o1_reasoning_SFT")
-    parser.add_argument("--in_file_name", type=str, default="compress_raw_100.json")
-    parser.add_argument("--out_file_name", type=str, default="compress_gpt_new990.json")
+    parser.add_argument("--data_name", type=str, default="mmlu_fina")
+    parser.add_argument("--in_file_name", type=str, default="fina_qattr_none_zero.json")
+    parser.add_argument("--out_file_name", type=str, default="fina_qattr_none_zero_compress.json")
     args = parser.parse_args()
 
     return args

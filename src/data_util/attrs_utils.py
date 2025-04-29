@@ -89,6 +89,7 @@ def generate_attributes(input_path, output_path, key_name = 'Question', output_k
         data = json.load(fin)
     client = OpenAI(api_key=_API_KEY)
     output_data = []
+    i = 0
     with tqdm(total=len(data), unit='batch') as pbar:
         for sample in data:
             question = sample[key_name]
@@ -107,7 +108,7 @@ def generate_attributes(input_path, output_path, key_name = 'Question', output_k
                 except Exception as e:
                     n_try += 1
                 if n_try >= 5:
-                    print(question, result)
+                    print(i, question, result)
                     break
                 
             if success:
@@ -133,6 +134,7 @@ def generate_attributes(input_path, output_path, key_name = 'Question', output_k
                 output_data.append(output)
                 with open(f'{output_path}', 'w', encoding="utf-8") as fout: # output new data
                     json.dump(output_data, fout, indent=4, ensure_ascii=False)
+            i += 1
             pbar.update(1)
 
 def generate_fake_attributes(input_path, output_path, key_name_context = 'question', key_name_attrs = "filtered private attributes", output_key_name = "fake attributes"):
@@ -298,7 +300,7 @@ def generate_fake_attributes_multi(input_path, output_path,
 
 
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
     # Generate attributes
     # key_name = 'compression', output_key_name = "private attributes compression"
     # key_name = 'question', output_key_name = "private attributes question"
@@ -310,7 +312,10 @@ def generate_fake_attributes_multi(input_path, output_path,
     # Generate filtered attributes for fina_mmlu
     # key_name = 'question', output_key_name = "private attributes question"
     # generate_attributes(f'{root_path}/data/mmlu_fina/fina_raw_data.json', f'{root_path}/data/mmlu_fina/fina_raw_data_qattr.json', key_name = 'question', output_key_name = "private attributes question")
+    # key_name = 'compression', output_key_name = "private attributes compression"
+    # generate_attributes(f'{root_path}/result/mmlu_fina/compress_gpt-4o_v2.json', f'{root_path}/data/mmlu_fina/fina_qcattr.json', key_name = 'compression', output_key_name = "private attributes compression")
     
+        
     # _____________________________________________________________________________________________________________
     # Generate fake attributes
     # key_name_context = 'compression', key_name_attr = 'filtered private attributes compression', output_key_name = 'fake attributes compression'
@@ -340,6 +345,29 @@ def generate_fake_attributes_multi(input_path, output_path,
     
     # generate_fake_attributes_multi(f'{root_path}/data/legal-qa-v1/compress_fake_cattr_multi_4omini_3_all.json', f'{root_path}/data/legal-qa-v1/compress_fake_cattr_multi_4omini_4.json', key_name_context='compression', key_name_attrs='filtered private attributes compression', prev_fake_attrs ='fake attributes compression', output_key_name='fake attributes compression', num_rounds= 1, model = "gpt-4o-mini-2024-07-18", get_response = get_response)
     
+    
+    # mmlu_fina
+    # generate_fake_attributes_multi(f'{root_path}/data/mmlu_fina/fina_qcattr_none_zero.json', f'{root_path}/data/mmlu_fina/fina_fake_qcattr_none_zero.json', key_name_context='question', key_name_attrs='filtered private attributes question', prev_fake_attrs ='fake attributes question', output_key_name='fake attributes question', num_rounds= 4, model = "gpt-4o-mini-2024-07-18", get_response = get_response)
+    
+    generate_fake_attributes_multi(f'{root_path}/data/mmlu_fina/fina_fake_qcattr_none_zero.json', f'{root_path}/data/mmlu_fina/fina_fake_qcattr_none_zero_c.json', key_name_context='compression', key_name_attrs='filtered private attributes compression', prev_fake_attrs ='fake attributes compression', output_key_name='fake attributes compression', num_rounds= 4, model = "gpt-4o-mini-2024-07-18", get_response = get_response)
+    
+    # with open(f'{root_path}/data/mmlu_fina/fina_fake_qattr_none_zero.json') as fin: 
+    #     data = json.load(fin)
+    #     data_1 = data[12]
+    #     data_2 = data[203]
+    #     data_3 = data[1419]
+    #     print(12)
+    #     print(data_1)
+    #     print(data_1['fake attributes question'])
+    #     print('---------------------------------------------')
+    #     print(203)
+    #     print(data_2)
+    #     print(data_2['fake attributes question'])
+    #     print('---------------------------------------------')
+    #     print(1419)
+    #     print(data_3)
+    #     print(data_3['fake attributes question'])
+    #     print('---------------------------------------------')
     # o3-------------------------------   ignore   -----------------------------------
     
     # generate_fake_attributes_multi(f'{root_path}/data/legal-qa-v1/compress_gpt_fake_qcattr.json', f'{root_path}/data/legal-qa-v1/compress_gpt_fake_qcattr_multi_q1_3o.json', key_name_context='question', key_name_attrs='filtered private attributes', prev_fake_attrs ='fake attributes question', output_key_name='fake attributes question', num_rounds= 1, model = "o3-mini-2025-01-31", get_response = get_response_o3)

@@ -44,9 +44,9 @@ def parse_args():
         help = "max new token for text generation")
     parser.add_argument("--local_cpr", type=str, default=None,
         help = "path of local compression files")
-    parser.add_argument("--remote_cpr", type=str, default="medical_o1_sft.json",
+    parser.add_argument("--remote_cpr", type=str, default="fina_qattr_none_zero_compress.json",
         help = "path of gpt compression files")
-    parser.add_argument("--data_name", type=str, default="medical_o1_reasoning_SFT")
+    parser.add_argument("--data_name", type=str, default="mmlu_fina")
     parser.add_argument("--gpt_model", type=str, default="gpt-4o-mini")
     args = parser.parse_args()
 
@@ -57,9 +57,9 @@ if __name__ == "__main__":
     if args.local_cpr is None:
         with open(f'{args.root_path}/data/{args.data_name}/{args.remote_cpr}') as fin:
             data = json.load(fin)
-        random.shuffle(data)
-        n_train = int(len(data)*0.8)
-        data = data[n_train:]
+        # random.shuffle(data)
+        # n_train = int(len(data)*0.8)
+        # data = data[n_train:]
     else:
         with open(f'{args.root_path}/result/{args.data_name}/{args.local_cpr}') as fin:
             data = json.load(fin)
@@ -73,7 +73,7 @@ if __name__ == "__main__":
         local_suffix = ""
     else:
         local_suffix = "_local"
-    output_path = f'{args.root_path}/result/mmlu/answer_{args.gpt_model}{local_suffix}.json'
+    output_path = f'{args.root_path}/result/{args.data_name}/answer_{args.gpt_model}{local_suffix}.json'
     output_data = []
     labels, origin_predictions, compress_predictions = [], [], []
     with tqdm(total=len(data), unit='batch') as pbar:
