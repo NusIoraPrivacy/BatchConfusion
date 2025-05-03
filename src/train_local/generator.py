@@ -23,10 +23,10 @@ def get_model_tokenizer(model_name, args):
         tokenizer.pad_token = tokenizer.eos_token
         with init_empty_weights():
             model = AutoModelForCausalLM.from_pretrained(model_name)
-        # device_map = infer_auto_device_map(model, max_memory={0: "1.5GiB", 1: "1.5GiB", 2: "1.5GiB", 3: "1.5GiB",}, 
+        # device_map = infer_auto_device_map(model, max_memory={0: "3GiB", 1: "3GiB", 2: "0GiB", 3: "0GiB",}, 
         #             no_split_module_classes=['MixtralDecoderLayer', "LlamaDecoderLayer", "Phi3DecoderLayer"])
         # print(device_map)
-        device_map = OrderedDict([('model.embed_tokens', 0), ('model.layers.0', 1), ('model.layers.1', 1), ('model.layers.2', 1), ('model.layers.3', 1), ('model.layers.4', 1), ('model.layers.5', 1), ('model.layers.6', 1), ('model.layers.7', 1), ('model.layers.8', 2), ('model.layers.9', 2), ('model.layers.10', 2), ('model.layers.11', 2), ('model.layers.12', 2), ('model.layers.13', 2), ('model.layers.14', 2), ('model.layers.15', 2), ('model.norm', 2), ('model.rotary_emb', 2), ('lm_head', 0)])
+        device_map = OrderedDict([('model.embed_tokens', 0), ('model.layers.0', 0), ('model.layers.1', 0), ('model.layers.2', 0), ('model.layers.3', 0), ('model.layers.4', 1), ('model.layers.5', 1), ('model.layers.6', 1), ('model.layers.7', 1), ('model.layers.8', 1), ('model.layers.9', 1), ('model.layers.10', 1), ('model.layers.11', 1), ('model.layers.12', 1), ('model.layers.13', 1), ('model.layers.14', 1), ('model.layers.15', 1), ('model.norm', 1), ('model.rotary_emb', 1), ('lm_head', 0)])
         model = AutoModelForCausalLM.from_pretrained(model_name, device_map = device_map)
     elif "bart" in model_name or "t5" in model_name:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -44,7 +44,7 @@ def parse_args():
     parser.add_argument("--max_tokens", type=int, default=1000,
         help = "max new token for text generation")
     parser.add_argument("--token_len", type=int, default=512)
-    parser.add_argument("--batch_size", type=int, default=100)
+    parser.add_argument("--batch_size", type=int, default=50)
     parser.add_argument("--data_name", type=str, default="medical_o1_reasoning_SFT")
     parser.add_argument("--in_file_name", type=str, default="compress_fake_cattr_multi_4omini_4.json")
     parser.add_argument("--out_file_name", type=str, default="compress_fake_cattr_v2.json")
@@ -83,7 +83,7 @@ def parse_args():
 #     return neg_log_likelihood
 
 def get_surprisal(model, org_attrs, fake_attr_list, org_query, loss_function, start_idx=0, end=False):
-    match = re.search(org_attrs[-1], org_query)
+    match = re.search(re.escape(org_attrs[-1]), org_query)
     if match:
         snippet_list = []
         if i == 0:
@@ -130,8 +130,18 @@ if __name__ == "__main__":
 
     loss_function = torch.nn.CrossEntropyLoss(reduction="none")
     out_path = f'{args.root_path}/result/{args.data_name}/{args.out_file_name}'
-    outputs = []
+    if os.path.exists(out_path):
+        with open(out_path) as fin:
+            outputs = json.load(fin)
+    else:
+        outputs = []
+    prev_questions = []
+    for sample in outputs:
+        prev_questions.append(sample["question"])
+        
     for sample in tqdm(data):
+        if sample["question"] in prev_questions:
+            continue
         try:
             priv_attrs, priv_cpr_attrs, fake_attrs = sample["filtered private attributes question"], sample["filtered private attributes compression"], sample["fake attributes question"]
             fake_key = "fake attributes question"
