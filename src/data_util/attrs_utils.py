@@ -20,7 +20,8 @@ root_path = os.path.dirname(os.path.dirname(current))
 stemmer = PorterStemmer()
 common_stems = {stemmer.stem(word) for word in common_words}
 
-def combine_data(data_filtered_path, data_compressed_path, output_json_path = None,output_json = False):
+# merge
+def merge_data(data_filtered_path, data_compressed_path, output_json_path = None,output_json = False):
     with open(f'{root_path}/data/{data_filtered_path}', 'r', encoding="utf-8") as fin:
         data_filtered = json.load(fin)
     with open(f'{root_path}/data/{data_compressed_path}', 'r', encoding="utf-8") as fin:
@@ -47,6 +48,24 @@ def combine_data(data_filtered_path, data_compressed_path, output_json_path = No
     
     return combined_json # list
 
+def combine_data(data_folder_path, output_json_path):
+    """Combines all the json files in one folder, the files should have the same structure."""
+    data_files = [f for f in os.listdir(data_folder_path) if f.endswith('.json')]
+    combined_data = []
+
+    for file_name in data_files:
+        file_path = os.path.join(data_folder_path, file_name)
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            combined_data.extend(data)
+
+    if output_json_path:
+        with open(output_json_path, 'w', encoding='utf-8') as f:
+            json.dump(combined_data, f, indent=4, ensure_ascii=False)
+
+    return combined_data  # Return the combined data
+
+
 def parse_args(model= "gpt-4o-mini-2024-07-18"): #"o3-mini-2025-01-31"): # "o1-mini-2024-09-12"):# 
     parser = argparse.ArgumentParser()
     parser.add_argument("--root_path", type=str, default=root_path)
@@ -59,6 +78,7 @@ def parse_args(model= "gpt-4o-mini-2024-07-18"): #"o3-mini-2025-01-31"): # "o1-m
 
     return args
 
+# for privacy attributes
 def rule_based_filter(input_path, output_path, key_name = "private attributes", num=2000):
     """Applies rule-based filtering to remove common words from attributes."""
     with open(f'{input_path}') as fin: 
@@ -72,6 +92,8 @@ def rule_based_filter(input_path, output_path, key_name = "private attributes", 
             if type(word) == int:
                 print(word)
                 filtered_result.append(word)
+            elif not isinstance(word, str):
+                filtered_result.append(str(word))
             elif stemmer.stem(word) not in common_stems:
                 filtered_result.append(word)
         
@@ -82,11 +104,38 @@ def rule_based_filter(input_path, output_path, key_name = "private attributes", 
     with open(f'{output_path}', 'w', encoding="utf-8") as fout:
         json.dump(output_data, fout, indent=4, ensure_ascii=False)
 
-def generate_attributes(input_path, output_path, key_name = 'Question', output_key_name = "private attributes", num=2000):
+# for fake attributes, if the original attributes becomes a common word, it will be removed
+def rule_based_filter_1(input_path, output_path, key_name = "private attributes", num=2000):
+    """Applies rule-based filtering to remove common words from attributes."""
+    with open(f'{input_path}') as fin: 
+        data = json.load(fin)
+    output_data = []
+    for sample in data:
+        fake_attr = sample[key_name]
+        output = copy.deepcopy(sample)
+        filtered_result = []
+        for word_lst in fake_attr:
+            word = word_lst[0]
+            if isinstance(word, str):
+                if stemmer.stem(word) not in common_stems:
+                    filtered_result.append(word_lst)
+            else:
+                filtered_result.append(word_lst)
+        
+        # Remove duplicates while preserving order
+        output[key_name] = filtered_result # list(dict.fromkeys(filtered_result))
+        output_data.append(output)
+            
+    with open(f'{output_path}', 'w', encoding="utf-8") as fout:
+        json.dump(output_data, fout, indent=4, ensure_ascii=False)
+
+# already includes filter
+def generate_attributes(input_path, output_path, key_name = 'Question', output_key_name = "private attributes", start= 0, end=5000):
     """Uses GPT to generate attributes and filter attributes from given questions."""
     args = parse_args(model = "ft:gpt-4o-mini-2024-07-18:personal::BBH2yexM")
     with open(f'{input_path}') as fin: 
         data = json.load(fin)
+        # data = data[start:end] if start >= 0 and end > start else data  # Limit to num samples if specified
     client = OpenAI(api_key=_API_KEY)
     output_data = []
     i = 0
@@ -188,12 +237,12 @@ def generate_fake_attributes(input_path, output_path, key_name_context = 'questi
 
 def generate_fake_attributes_multi(input_path, output_path, 
                                    get_response, model="gpt-4o-mini-2024-07-18", 
-                                   key_name_context='question', key_name_attrs='filtered private attributes', prev_fake_attrs ='fake attributes', output_key_name='fake attributes', num_rounds=3):
+                                   key_name_context='question', key_name_attrs='filtered private attributes', prev_fake_attrs ='fake attributes', output_key_name='fake attributes', num_rounds=3, start = 0, end = 5000):
     """Generates multiple rounds of fake attributes and appends them while ensuring uniqueness."""
     args = parse_args(model)
     with open(input_path, 'r', encoding="utf-8") as fin:
         data = json.load(fin)
-        # data = data[163:165]
+        data = data[start:end] if start >= 0 and end > start else data
     
     i = 0
     
@@ -281,6 +330,7 @@ def generate_fake_attributes_multi(input_path, output_path,
                         existing_entry = next((entry for entry in previous_fake_attributes if entry[0] == original_attr), None)
                         if existing_entry:
                             existing_entry.extend(row[1:])  # Append new attributes
+                            
                         else:
                             previous_fake_attributes.append(row)  # If missing, add it
 
@@ -304,18 +354,20 @@ if __name__ == "__main__":
     # Generate attributes
     # key_name = 'compression', output_key_name = "private attributes compression"
     # key_name = 'question', output_key_name = "private attributes question"
+    
     # generate_attributes(f'{root_path}/data/medical_o1_reasoning_SFT/compress_gpt_new990.json', f'{root_path}/data/medical_o1_reasoning_SFT/compress_gpt_new990_qattr_1.json', key_name = 'question', output_key_name = "private attributes question")
     # generate_attributes(f'{root_path}/data/medical_o1_reasoning_SFT/compress_gpt_new990_qattr_1.json', f'{root_path}/data/medical_o1_reasoning_SFT/compress_gpt_new990_qcattr_1.json', key_name = 'compression', output_key_name = "private attributes compression")
-    
     # generate_attributes(f'{root_path}/data/legal-qa-v1/compress_gpt.json', f'{root_path}/data/legal-qa-v1/compress_gpt_qcattr.json', key_name = 'compression', output_key_name = "private attributes compression")
     
-    # Generate filtered attributes for fina_mmlu
+    # Generate filtered attributes for mmlu_fina
     # key_name = 'question', output_key_name = "private attributes question"
     # generate_attributes(f'{root_path}/data/mmlu_fina/fina_raw_data.json', f'{root_path}/data/mmlu_fina/fina_raw_data_qattr.json', key_name = 'question', output_key_name = "private attributes question")
     # key_name = 'compression', output_key_name = "private attributes compression"
     # generate_attributes(f'{root_path}/result/mmlu_fina/compress_gpt-4o_v2.json', f'{root_path}/data/mmlu_fina/fina_qcattr.json', key_name = 'compression', output_key_name = "private attributes compression")
     
-        
+    # key_name = 'text', output_key_name = "private attributes text"
+    # generate_attributes(f'{root_path}/data/twitter/gender_dataset.json', f'{root_path}/data/twitter/gender_dataset_qattr.json', key_name = 'text', output_key_name = "private attributes text")
+
     # _____________________________________________________________________________________________________________
     # Generate fake attributes
     # key_name_context = 'compression', key_name_attr = 'filtered private attributes compression', output_key_name = 'fake attributes compression'
@@ -349,7 +401,12 @@ if __name__ == "__main__":
     # mmlu_fina
     # generate_fake_attributes_multi(f'{root_path}/data/mmlu_fina/fina_qcattr_none_zero.json', f'{root_path}/data/mmlu_fina/fina_fake_qcattr_none_zero.json', key_name_context='question', key_name_attrs='filtered private attributes question', prev_fake_attrs ='fake attributes question', output_key_name='fake attributes question', num_rounds= 4, model = "gpt-4o-mini-2024-07-18", get_response = get_response)
     
-    generate_fake_attributes_multi(f'{root_path}/data/mmlu_fina/fina_fake_qcattr_none_zero.json', f'{root_path}/data/mmlu_fina/fina_fake_qcattr_none_zero_c.json', key_name_context='compression', key_name_attrs='filtered private attributes compression', prev_fake_attrs ='fake attributes compression', output_key_name='fake attributes compression', num_rounds= 4, model = "gpt-4o-mini-2024-07-18", get_response = get_response)
+    # generate_fake_attributes_multi(f'{root_path}/data/mmlu_fina/fina_fake_qcattr_none_zero.json', f'{root_path}/data/mmlu_fina/fina_fake_qcattr_none_zero_c.json', key_name_context='compression', key_name_attrs='filtered private attributes compression', prev_fake_attrs ='fake attributes compression', output_key_name='fake attributes compression', num_rounds= 4, model = "gpt-4o-mini-2024-07-18", get_response = get_response)
+    
+    # twitter
+    # start = 7763
+    # end = 10000
+    # generate_fake_attributes_multi(f'{root_path}/data/twitter/gender_dataset_qattr.json', f'{root_path}/data/twitter/gender_dataset_fake_qattr_{start}.json', key_name_context='text', key_name_attrs='filtered private attributes text', prev_fake_attrs ='fake attributes text', output_key_name='fake attributes text', model = "gpt-4o-mini-2024-07-18", get_response = get_response, num_rounds= 2, start = start, end = end)
     
     # with open(f'{root_path}/data/mmlu_fina/fina_fake_qattr_none_zero.json') as fin: 
     #     data = json.load(fin)
@@ -371,3 +428,20 @@ if __name__ == "__main__":
     # o3-------------------------------   ignore   -----------------------------------
     
     # generate_fake_attributes_multi(f'{root_path}/data/legal-qa-v1/compress_gpt_fake_qcattr.json', f'{root_path}/data/legal-qa-v1/compress_gpt_fake_qcattr_multi_q1_3o.json', key_name_context='question', key_name_attrs='filtered private attributes', prev_fake_attrs ='fake attributes question', output_key_name='fake attributes question', num_rounds= 1, model = "o3-mini-2025-01-31", get_response = get_response_o3)
+    
+    #------------------------------------- filter ------------------------------------------------
+    # input_path = f'{root_path}/data/mmlu_fina/fina_fake_qattr_none_zero.json'
+    # output_path = f'{root_path}/data/mmlu_fina/fina_fake_qattr_none_zero_1.json'
+    # rule_based_filter(input_path, output_path, key_name = "private attributes compression")
+    # input_path = f'{root_path}/data/mmlu_fina/fina_fake_qattr_none_zero_1.json'
+    # output_path = f'{root_path}/data/mmlu_fina/fina_fake_qattr_none_zero_1.json'
+    # rule_based_filter(input_path, output_path, key_name = "private attributes question")
+    # rule_based_filter_1(input_path, output_path, key_name = "fake attributes compression")
+    # rule_based_filter_1(input_path, output_path, key_name = "fake attributes question")
+    
+    # merge json:
+    data_folder_path = f'{root_path}/data/twitter/temp'
+    output_json_path = f'{root_path}/data/twitter/gender_dataset_fake_qattr.json'
+    combined_json = combine_data(data_folder_path, output_json_path)
+    print(f"Combined JSON saved to {output_json_path}")
+    # print(combined_json[0])

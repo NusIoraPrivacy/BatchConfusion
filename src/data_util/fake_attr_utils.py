@@ -69,7 +69,7 @@ def filter_attribute(
 
     print(f"Filtered data saved to: {output_path}")
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # # legal
     # data_path = f'{root_path}/data/legal-qa-v1/compress_gpt_qcattr.json'
     # output_image_path = f'{root_path}/data/legal-qa-v1/attribute_frequencies_q.png'
