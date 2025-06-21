@@ -19,10 +19,11 @@ current = os.path.dirname(os.path.realpath(__file__))
 root_path = os.path.dirname(os.path.dirname(current))
 
 models = ["Qwen/Qwen2.5-1.5B-Instruct", "meta-llama/Llama-3.2-1B", "meta-llama/Llama-3.1-8B", "openai-community/gpt2"]
-data_names = ["legal-qa-v1", "medical_o1_reasoning_SFT", "mmlu_fina", "twitter"]
-fake_keys = ['fake attributes question', 'fake attributes compression', "fake attributes text"]
-priv_keys = ["filtered private attributes question", "filtered private attributes compression", "filtered private attributes", "filtered private attributes text"]
-query_keys = ["question", "compression", "text"]
+data_names = ["twitter"]
+fake_keys = ["fake attributes text"]
+priv_keys = ["filtered private attributes text"]
+query_keys = ["text"]
+attr_keys = ["gender"]
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -34,21 +35,31 @@ def parse_args():
     parser.add_argument("--token_len", type=int, default=512)
     parser.add_argument("--train_batch_size", type=int, default=10)
     parser.add_argument("--test_batch_size", type=int, default=20)
-    parser.add_argument("--data_name", type=str, default="mmlu_fina")
-    parser.add_argument("--in_file_name", type=str, default="fake_cattr_random_0.5.json")
-    parser.add_argument("--fake_key", type=str, default=fake_keys[1])
-    parser.add_argument("--priv_key", type=str, default=priv_keys[1])
-    parser.add_argument("--query_key", type=str, default=query_keys[1])
-    parser.add_argument("--model_name", type=str, default=models[1])
+    parser.add_argument("--data_name", type=str, default=data_names[0])
+    parser.add_argument("--in_file_name", type=str, default="fake_attr_random_0.5.json")
+    parser.add_argument("--fake_key", type=str, default=fake_keys[0])
+    parser.add_argument("--priv_key", type=str, default=priv_keys[0])
+    parser.add_argument("--query_key", type=str, default=query_keys[0])
+    parser.add_argument("--attr_key", type=str, default=attr_keys[0])
+    parser.add_argument("--model_name", type=str, default=models[0])
     parser.add_argument("--train_pct", type=float, default=0.8)
     parser.add_argument("--device", type=str, default="cuda:1")
     parser.add_argument("--max_word", type=int, default=100)
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--sample_top_k", type=int, default=1)
-    parser.add_argument("--n_negative", type=int, default=1)
+    parser.add_argument("--n_fake_train", type=int, default=1)
+    parser.add_argument("--n_fake_test", type=int, default=1)
     parser.add_argument("--epochs", type=int, default=20)
     args = parser.parse_args()
     return args
+
+def process_target(target):
+    if target == "female":
+        return 0
+    elif target == "male":
+        return 1
+    else:
+        return -1
 
 if __name__ == "__main__":
     args = parse_args()
@@ -58,7 +69,7 @@ if __name__ == "__main__":
         os.makedirs(log_root)
     file_name = (args.in_file_name).replace(".json", "")
     model_name = (args.model_name).split("/")[-1]
-    file_name = f"pjd-{file_name}-{model_name}-top-{args.sample_top_k}.log"
+    file_name = f"atr-{file_name}-{model_name}-top-{args.sample_top_k}.log"
     file_path = f"{log_root}/{file_name}"
     logging.basicConfig(
         filename=file_path,
@@ -68,33 +79,37 @@ if __name__ == "__main__":
     )
 
     model, tokenizer = get_model_tokenizer(args.model_name, num_labels=2, args=args)
-    data_path = f'{args.root_path}/result/{args.data_name}/{args.in_file_name}'
-    with open(data_path) as fin:
-        raw_data = json.load(fin)
-    # create classification dataset 
-    process_data = []
-    for sample in raw_data:
-        priv_attrs, fake_attrs, query = sample[args.priv_key], sample[args.fake_key], sample[args.query_key]
-        process_data.append({"prompt": query, "label": 1})
+    with open(f'{args.root_path}/result/{args.data_name}/{args.in_file_name}') as fin:
+        data = json.load(fin)
+    # prepare train and test data
+    train_data = []
+    test_data = []
+    for sample in data:
+        priv_attrs, fake_attrs, query, target = sample[args.priv_key], sample[args.fake_key], sample[args.query_key], sample[args.attr_key]
+        target = process_target(target)
+        if target == -1:
+            continue
+        train_data.append({"prompt": query, "label": target})
         top_k = max(args.sample_top_k, len(fake_attrs)-1)
         if top_k > 0:
-            sample_fake_attrs = fake_attrs[(top_k-1):(top_k-1+args.n_negative)]
+            sample_fake_attrs = fake_attrs[(top_k-1):(top_k-1+args.n_fake_train)]
         else:
-            sample_fake_attrs = random.sample(fake_attrs, args.n_negative)
-        # print(sample_fake_attrs)
-        for fake_attr_list in sample_fake_attrs:
+            sample_fake_attrs = random.sample(fake_attrs, args.n_fake_train)
+        test_cnt = 0
+        for fake_attr_list in fake_attrs:
             this_query = "" + query
             for priv_attr, fake_attr in zip(priv_attrs, fake_attr_list):
                 this_query = this_query.replace(priv_attr, fake_attr)
-            process_data.append({"prompt": this_query, "label": 0})
-
-    random.shuffle(process_data)
-    n_train = int(len(process_data) * args.train_pct)
-    train_data = process_data[:n_train]
-    test_data = process_data[n_train:]
+            if fake_attr_list in sample_fake_attrs:
+                train_data.append({"prompt": this_query, "label": target})
+            else:
+                if test_cnt < args.n_fake_test:
+                    test_data.append({"prompt": this_query, "label": target})
+                    test_cnt += 1
+    
+    # prepare dataloader
     train_dataset = AttackDataset(train_data, tokenizer, args.max_word)
     test_dataset = AttackDataset(test_data, tokenizer, args.max_word)
-    # obtain dataloader
     train_loader = DataLoader(
             train_dataset, 
             batch_size=args.train_batch_size, 
@@ -107,7 +122,7 @@ if __name__ == "__main__":
             collate_fn=default_data_collator, 
             pin_memory=True,
             )
-
+    
     # prepare optimizer and scheduler
     optimizer = optim.AdamW(
                     model.parameters(),
@@ -122,7 +137,7 @@ if __name__ == "__main__":
         num_training_steps=num_training_steps,
         )
     
-    # train models
+    # train the model
     best_acc = 0
     for epoch in range(args.epochs):
         model.train()

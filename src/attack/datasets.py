@@ -1,7 +1,7 @@
 from datasets import Dataset
 import torch
 
-class PJDDataset(Dataset):
+class AttackDataset(Dataset):
     def __init__(self, inputs, tokenizer, max_words=100, pad=True):
         self.tokenizer = tokenizer
         self.max_words = max_words

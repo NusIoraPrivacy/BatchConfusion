@@ -17,10 +17,10 @@ current = os.path.dirname(os.path.realpath(__file__))
 root_path = os.path.dirname(os.path.dirname(current))
 
 models = ["Qwen/Qwen2.5-1.5B-Instruct", "meta-llama/Llama-3.2-1B", "meta-llama/Llama-3.1-8B", "openai-community/gpt2"]
-data_names = ["legal-qa-v1", "medical_o1_reasoning_SFT", "mmlu_fina"]
-fake_keys = ['fake attributes question', 'fake attributes compression']
-priv_keys = ["filtered private attributes question", "filtered private attributes compression", "filtered private attributes"]
-query_keys = ["question", "compression"]
+data_names = ["legal-qa-v1", "medical_o1_reasoning_SFT", "mmlu_fina", "twitter"]
+fake_keys = ['fake attributes question', 'fake attributes compression', "fake attributes text"]
+priv_keys = ["filtered private attributes question", "filtered private attributes compression", "filtered private attributes", "filtered private attributes text"]
+query_keys = ["question", "compression", "text"]
 
 def get_model_tokenizer(model_name, args):
     if "Qwen" in model_name or "Llama" in model_name:
@@ -47,18 +47,18 @@ def parse_args():
     parser.add_argument("--temperature", type=float, default=1,
         help = "temperature for text generation")
     parser.add_argument("--batch_size", type=int, default=100)
-    parser.add_argument("--data_name", type=str, default=data_names[1])
-    parser.add_argument("--in_file_name", type=str, default="compress_fake_cattr_multi_4omini_4.json")
-    parser.add_argument("--out_file_name", type=str, default="fake_cattr_random_0.3.json")
-    parser.add_argument("--fake_key", type=str, default=fake_keys[1])
-    parser.add_argument("--priv_key", type=str, default=priv_keys[1])
-    parser.add_argument("--query_key", type=str, default=query_keys[1])
+    parser.add_argument("--data_name", type=str, default=data_names[-1])
+    parser.add_argument("--in_file_name", type=str, default="gender_dataset_fake_qattr.json")
+    parser.add_argument("--out_file_name", type=str, default="fake_attr_random_0.5.json")
+    parser.add_argument("--fake_key", type=str, default=fake_keys[-1])
+    parser.add_argument("--priv_key", type=str, default=priv_keys[-1])
+    parser.add_argument("--query_key", type=str, default=query_keys[-1])
     parser.add_argument("--model_name", type=str, default=models[1])
     parser.add_argument("--test_only", type=bool, default=False)
     parser.add_argument("--device", type=str, default="cuda:1")
     parser.add_argument("--thd", type=float, default=5.5)
     parser.add_argument("--decay_weight", type=float, default=0.1)
-    parser.add_argument("--top_k_ratio", type=float, default=0.3)
+    parser.add_argument("--top_k_ratio", type=float, default=0.5)
     parser.add_argument("--max_length", type=int, default=100) # cpr: 100; full: 250
     args = parser.parse_args()
     return args
@@ -124,7 +124,8 @@ if __name__ == "__main__":
     if not os.path.exists(log_root):
         os.makedirs(log_root)
     file_name = (args.out_file_name).replace(".json", "")
-    file_name = f"rdgen-{file_name}.log"
+    model_name = (args.model_name).split("/")[-1]
+    file_name = f"rdgen-{file_name}-{model_name}.log"
     file_path = f"{log_root}/{file_name}"
     logging.basicConfig(
         filename=file_path,
@@ -146,14 +147,14 @@ if __name__ == "__main__":
         outputs = []
     prev_questions = []
     for sample in outputs:
-        prev_questions.append(sample["question"])
+        prev_questions.append(sample[args.query_key])
 
     times = []
     all_samples = []
     with tqdm(total=len(data)) as pbar:
         for cnt, sample in enumerate(data):
             # print(sample.keys())
-            if sample["question"] in prev_questions:
+            if sample[args.query_key] in prev_questions:
                 pbar.update(1)
                 continue
             # print(sample.keys())
