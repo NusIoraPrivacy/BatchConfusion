@@ -18,7 +18,7 @@ from attack.utils import get_model_tokenizer
 current = os.path.dirname(os.path.realpath(__file__))
 root_path = os.path.dirname(os.path.dirname(current))
 
-models = ["Qwen/Qwen2.5-1.5B-Instruct", "meta-llama/Llama-3.2-1B", "meta-llama/Llama-3.1-8B", "openai-community/gpt2"]
+models = ["Qwen/Qwen2.5-1.5B-Instruct", "meta-llama/Llama-3.2-1B", "meta-llama/Llama-3.1-8B", "Qwen/Qwen2.5-0.5B-Instruct"]
 data_names = ["legal-qa-v1", "medical_o1_reasoning_SFT", "mmlu_fina", "twitter"]
 fake_keys = ['fake attributes question', 'fake attributes compression', "fake attributes text"]
 priv_keys = ["filtered private attributes question", "filtered private attributes compression", "filtered private attributes", "filtered private attributes text"]
@@ -36,9 +36,9 @@ def parse_args():
     parser.add_argument("--test_batch_size", type=int, default=20)
     parser.add_argument("--data_name", type=str, default="mmlu_fina")
     parser.add_argument("--in_file_name", type=str, default="fake_cattr_random_0.5.json")
-    parser.add_argument("--fake_key", type=str, default=fake_keys[1])
-    parser.add_argument("--priv_key", type=str, default=priv_keys[1])
-    parser.add_argument("--query_key", type=str, default=query_keys[1])
+    parser.add_argument("--fake_key", type=str, default=fake_keys[-1])
+    parser.add_argument("--priv_key", type=str, default=priv_keys[-1])
+    parser.add_argument("--query_key", type=str, default=query_keys[-1])
     parser.add_argument("--model_name", type=str, default=models[1])
     parser.add_argument("--train_pct", type=float, default=0.8)
     parser.add_argument("--device", type=str, default="cuda:1")
@@ -47,6 +47,7 @@ def parse_args():
     parser.add_argument("--sample_top_k", type=int, default=1)
     parser.add_argument("--n_negative", type=int, default=1)
     parser.add_argument("--epochs", type=int, default=20)
+    parser.add_argument("--save_model", action='store_true')
     args = parser.parse_args()
     return args
 
@@ -145,7 +146,7 @@ if __name__ == "__main__":
                 optimizer.zero_grad()
                 pbar.update(1)
                 pbar.set_postfix(loss=loss_avg)
-                # break
+                break
             print(f'[epoch: {epoch}] Loss: {np.mean(np.array(loss_list))}')
         
         labels = []
@@ -170,6 +171,7 @@ if __name__ == "__main__":
                 f1 = f1_score(labels, predictions)
                 pbar.update(1)
                 pbar.set_postfix(acc=acc, auc=auc, precision=precision, recall=recall, f1=f1)
+                break
         print(f"Accuracy for epoch {epoch}: {acc}")
         print(f"AUC for epoch {epoch}: {auc}")
 
@@ -181,3 +183,11 @@ if __name__ == "__main__":
                 f"Recall {recall} - "
                 f"F1 {f1}"
             )
+    
+    if args.save_model:
+        model_name = "-".join((args.model_name).split("/"))
+        save_path = f"{args.root_path}/model/{args.data_name}/{model_name}"
+        if not os.path.exists(log_root):
+            os.makedirs(log_root)
+        model.save_pretrained(save_path)
+        tokenizer.save_pretrained(save_path)
