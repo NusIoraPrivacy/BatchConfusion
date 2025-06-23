@@ -18,7 +18,7 @@ from attack.utils import get_model_tokenizer
 current = os.path.dirname(os.path.realpath(__file__))
 root_path = os.path.dirname(os.path.dirname(current))
 
-models = ["Qwen/Qwen2.5-1.5B-Instruct", "meta-llama/Llama-3.2-1B", "meta-llama/Llama-3.1-8B", "Qwen/Qwen2.5-0.5B-Instruct"]
+models = ["Qwen/Qwen2.5-1.5B-Instruct", "meta-llama/Llama-3.2-1B", "meta-llama/Llama-3.1-8B", "meta-llama/Llama-3.2-3B", "FacebookAI/roberta-large"]
 data_names = ["legal-qa-v1", "medical_o1_reasoning_SFT", "mmlu_fina", "twitter"]
 fake_keys = ['fake attributes question', 'fake attributes compression', "fake attributes text"]
 priv_keys = ["filtered private attributes question", "filtered private attributes compression", "filtered private attributes", "filtered private attributes text"]
@@ -76,18 +76,19 @@ if __name__ == "__main__":
     process_data = []
     for sample in raw_data:
         priv_attrs, fake_attrs, query = sample[args.priv_key], sample[args.fake_key], sample[args.query_key]
-        process_data.append({"prompt": query, "label": 1})
-        top_k = max(args.sample_top_k, len(fake_attrs)-1)
-        if top_k > 0:
-            sample_fake_attrs = fake_attrs[(top_k-1):(top_k-1+args.n_negative)]
-        else:
-            sample_fake_attrs = random.sample(fake_attrs, args.n_negative)
-        # print(sample_fake_attrs)
-        for fake_attr_list in sample_fake_attrs:
-            this_query = "" + query
-            for priv_attr, fake_attr in zip(priv_attrs, fake_attr_list):
-                this_query = this_query.replace(priv_attr, fake_attr)
-            process_data.append({"prompt": this_query, "label": 0})
+        if len(fake_attrs) > 0:
+            process_data.append({"prompt": query, "label": 1})
+            top_k = max(args.sample_top_k, len(fake_attrs)-1)
+            if top_k > 0:
+                sample_fake_attrs = fake_attrs[(top_k-1):(top_k-1+args.n_negative)]
+            else:
+                sample_fake_attrs = random.sample(fake_attrs, args.n_negative)
+            # print(sample_fake_attrs)
+            for fake_attr_list in sample_fake_attrs:
+                this_query = "" + query
+                for priv_attr, fake_attr in zip(priv_attrs, fake_attr_list):
+                    this_query = this_query.replace(priv_attr, fake_attr)
+                process_data.append({"prompt": this_query, "label": 0})
 
     random.shuffle(process_data)
     n_train = int(len(process_data) * args.train_pct)
@@ -146,7 +147,7 @@ if __name__ == "__main__":
                 optimizer.zero_grad()
                 pbar.update(1)
                 pbar.set_postfix(loss=loss_avg)
-                break
+                # break
             print(f'[epoch: {epoch}] Loss: {np.mean(np.array(loss_list))}')
         
         labels = []
@@ -171,7 +172,7 @@ if __name__ == "__main__":
                 f1 = f1_score(labels, predictions)
                 pbar.update(1)
                 pbar.set_postfix(acc=acc, auc=auc, precision=precision, recall=recall, f1=f1)
-                break
+                # break
         print(f"Accuracy for epoch {epoch}: {acc}")
         print(f"AUC for epoch {epoch}: {auc}")
 

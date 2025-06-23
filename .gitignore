@@ -5,3 +5,4 @@ result
 src/*.log
 *.log
 key.py
+model

@@ -15,6 +15,7 @@ def get_model_tokenizer(model_name, num_labels=2, args=None):
         # # print(model)
         # device_map = infer_auto_device_map(model, max_memory={0: "20GiB", 1: "20GiB"}, no_split_module_classes=["LlamaDecoderLayer"])
         base_model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=num_labels, device_map="auto")
+        base_model.config.pad_token_id = tokenizer.pad_token_id
     elif "roberta" in model_name.lower():
         base_model = AutoModelForSequenceClassification.from_pretrained(model_name, 
                                                         num_labels=num_labels)
