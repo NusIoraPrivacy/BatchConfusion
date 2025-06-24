@@ -4,7 +4,7 @@ sample_multipliers=(2 5 10)
 sample_top_ks=(0)
 models=("Qwen/Qwen2.5-0.5B-Instruct" "Qwen/Qwen2.5-1.5B-Instruct")
 # dis_models=("FacebookAI/roberta-large" "meta-llama/Llama-3.2-1B" "meta-llama/Llama-3.2-3B" "meta-llama/Llama-3.1-8B")
-dis_models=("meta-llama/Llama-3.2-1B" "meta-llama/Llama-3.2-3B" "meta-llama/Llama-3.1-8B")
+dis_models=("meta-llama/Llama-3.1-8B")
 
 # for top_k in ${top_k_ratios[@]}
 # do
@@ -33,7 +33,7 @@ do
             for dis_model in ${dis_models[@]}
             do
                 echo "Prompt judgement attack under multiplier $sample_mul with sample top-k $sample_top_k with model $dis_model"
-                python -m attack.pjd_attack --in_file_name "fake_cattr_random_${model_short_name}_${sample_mul}.json" --model_name $dis_model --fake_key "fake attributes compression" --priv_key "filtered private attributes compression" --query_key compression --data_name mmlu_fina --sample_top_k $sample_top_k --epochs 20
+                python -m attack.pjd_attack --in_file_name "fake_cattr_random_${model_short_name}_${sample_mul}.json" --model_name $dis_model --fake_key "fake attributes compression" --priv_key "filtered private attributes compression" --query_key compression --data_name mmlu_fina --sample_top_k $sample_top_k --epochs 20 --train_batch_size 5 --test_batch_size 10 --use_peft
             done
         done
     done
