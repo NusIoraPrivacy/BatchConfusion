@@ -1,4 +1,6 @@
 from transformers import default_data_collator, get_scheduler
+from sentence_transformers import SentenceTransformer
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import torch
 import torch.optim as optim
@@ -50,6 +52,8 @@ def parse_args():
     parser.add_argument("--n_fake_train", type=int, default=0)
     parser.add_argument("--n_fake_test", type=int, default=1)
     parser.add_argument("--epochs", type=int, default=20)
+    parser.add_argument("--emb_model", type=str, default="all-MiniLM-L6-v2")
+    parser.add_argument("--use_emb", action='store_true')
     args = parser.parse_args()
     return args
 
@@ -79,6 +83,7 @@ if __name__ == "__main__":
     )
 
     model, tokenizer = get_model_tokenizer(args.model_name, num_labels=2, args=args)
+    sim_model = SentenceTransformer(args.emb_model)
     with open(f'{args.root_path}/result/{args.data_name}/{args.in_file_name}') as fin:
         data = json.load(fin)
     # prepare train and test data
@@ -96,6 +101,7 @@ if __name__ == "__main__":
         else:
             sample_fake_attrs = random.sample(fake_attrs, args.n_fake_train)
         test_cnt = 0
+        test_candidates = []
         for fake_attr_list in fake_attrs:
             this_query = "" + query
             for priv_attr, fake_attr in zip(priv_attrs, fake_attr_list):
@@ -103,9 +109,21 @@ if __name__ == "__main__":
             if fake_attr_list in sample_fake_attrs:
                 train_data.append({"prompt": this_query, "label": target})
             else:
-                if test_cnt < args.n_fake_test:
-                    test_data.append({"prompt": this_query, "label": target})
-                    test_cnt += 1
+                if args.use_emb:
+                    test_candidates.append(this_query)
+                else:
+                    if test_cnt < args.n_fake_test:
+                        test_data.append({"prompt": this_query, "label": target})
+                        test_cnt += 1
+        if args.use_emb and len(test_candidates)>0:
+            embeddings1 = sim_model.encode([query], convert_to_tensor=True, show_progress_bar=False)
+            embeddings2 = sim_model.encode(test_candidates, convert_to_tensor=True, show_progress_bar=False)
+            similarities = F.cosine_similarity(embeddings1, embeddings2)
+            sort_sim, indices = torch.sort(similarities)
+            selected_idx = indices[:args.n_fake_test]
+            for idx in selected_idx:
+                test_prompt = test_candidates[idx]
+                test_data.append({"prompt": test_prompt, "label": target})
     
     # prepare dataloader
     train_dataset = AttackDataset(train_data, tokenizer, args.max_word)
