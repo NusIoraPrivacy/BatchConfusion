@@ -15,7 +15,7 @@ import argparse
 current = os.path.dirname(os.path.realpath(__file__))
 root_path = os.path.dirname(os.path.dirname(current))
 
-models = ["Qwen/Qwen2.5-1.5B-Instruct", "meta-llama/Llama-3.2-1B", "meta-llama/Llama-3.1-8B", "princeton-nlp/gemma-2-9b-it-SimPO"]
+models = ["Qwen/Qwen2.5-1.5B-Instruct", "Qwen/Qwen3-1.7B", "Qwen/Qwen3-4B", "Qwen/Qwen3-8B"]
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -29,9 +29,11 @@ def parse_args():
     parser.add_argument("--test_batch_size", type=int, default=2)
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--lr", type=float, default=1e-5)
-    parser.add_argument("--gpt_model", type=str, default="gpt-4o")
-    parser.add_argument("--data_name", type=str, default="medical_o1_reasoning_SFT")
-    parser.add_argument("--model_name", type=str, default=models[0])
+    parser.add_argument("--data_name", type=str, default="mmlu_fina")
+    parser.add_argument("--in_file_name", type=str, default="fina_fake_qcattr_none_zero.json")
+    parser.add_argument("--query_key", type=str, default="question")
+    parser.add_argument("--cpr_key", type=str, default="compression")
+    parser.add_argument("--model_name", type=str, default=models[3])
     parser.add_argument("--test_only", type=bool, default=False)
     args = parser.parse_args()
 
@@ -40,9 +42,17 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     model, tokenizer = get_model_tokenizer(args.model_name, args)
-    with open(f'{args.root_path}/data/{args.data_name}/compress_gpt.json') as fin:
-        data = json.load(fin)
-    random.shuffle(data)
+    with open(f'{args.root_path}/data/{args.data_name}/{args.in_file_name}') as fin:
+        raw_data = json.load(fin)
+    random.shuffle(raw_data)
+    data = []
+    for sample in raw_data:
+        new_sample = {
+            "question": sample[args.query_key],
+            "compression": sample[args.cpr_key]
+        }
+        data.append(new_sample)
+
     n_train = int(len(data) * 0.8)
     train_data = data[:n_train]
     test_data = data[n_train:]

@@ -64,6 +64,7 @@ def get_probs(model, org_attrs, fake_attr_list, org_query, loss_function, args):
     snippet_list = []
     for fake_attrs in fake_attr_list:
         this_snippet = "" + snippet
+        # print(this_snippet)
         for org_attr, fake_attr in zip(org_attrs, fake_attrs):
             this_snippet = this_snippet.replace(org_attr, fake_attr)
         snippet_list.append(this_snippet)
@@ -77,7 +78,7 @@ def get_probs(model, org_attrs, fake_attr_list, org_query, loss_function, args):
         inputs[key] = inputs[key].to(model.device)
     # input_ids = inputs['input_ids'].to(model.device)
     # target_ids[:, :start_idx] = -100
-
+    # print(inputs)
     with torch.no_grad():
         outputs = model(**inputs)
         logits = outputs.logits
@@ -150,7 +151,7 @@ if __name__ == "__main__":
                 continue
             # print(sample.keys())
             priv_attrs, fake_attrs, query = sample[args.priv_key], sample[args.fake_key], sample[args.query_key]
-            if len(fake_attrs) == 0:
+            if len(fake_attrs) and len(query) == 0:
                 pbar.update(1)
                 continue
             fake_key = args.fake_key
@@ -172,6 +173,7 @@ if __name__ == "__main__":
             for i in range(itrs):
                 this_seq_list = sample_fake_attrs[(i*args.batch_size):((i+1)*args.batch_size)]
                 if len(this_seq_list) > 0:
+                    # print(this_seq_list)
                     this_scores = get_probs(model, priv_attrs, this_seq_list, query, loss_function, args)
                     scores.extend(this_scores)
             

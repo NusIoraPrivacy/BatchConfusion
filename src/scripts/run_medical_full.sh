@@ -10,7 +10,7 @@ do
     do
         model_short_name="${model##*/}"
         echo "Generate fake combinations under multiplier $sample_mul using with model $model_short_name"
-        python -m train_local.generator_v3 --out_file_name "fake_qattr_random_${model_short_name}_${sample_mul}.json" --sample_mul $sample_mul --fake_key "fake attributes question" --priv_key "filtered private attributes question" --query_key question --data_name medical_o1_reasoning_SFT --in_file_name compress_fake_qattr_multi_4omini_4.json --model_name $model --max_length 250
+        python -m train_local.generator_v3 --out_file_name "fake_qattr_random_${model_short_name}_${sample_mul}.json" --sample_mul $sample_mul --fake_key "fake attributes question" --priv_key "filtered private attributes question" --query_key question --data_name medical_o1_reasoning_SFT --in_file_name compress_fake_qattr_multi_4omini_4.json --model_name $model --max_length 250 --batch_size 100
         # echo "Prompt judgement attack under multiplier $sample_mul using with model $model_short_name"
         # python -m attack.pjd_attack --in_file_name "fake_qattr_random_$top_k.json" --model_name "Qwen/Qwen2.5-1.5B-Instruct" --fake_key "fake attributes question" --priv_key "filtered private attributes question" --query_key question --data_name medical_o1_reasoning_SFT --sample_top_k 0
     done

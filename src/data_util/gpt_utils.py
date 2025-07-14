@@ -6,6 +6,7 @@ from openai import (
     APIConnectionError,
     APIError,
 )
+from google import genai
 
 def create_message(prompt):
     messages = [
@@ -31,13 +32,26 @@ def get_response(client, prompt, args, gpt_model=None):
             rslt = "Error"
             break
         try:
-            response = client.chat.completions.create(
-                model=gpt_model,
-                messages=messages,
-                temperature=args.temperature,
-                max_tokens=args.max_tokens,
-            )
-            rslt = response.choices[0].message.content
+            if "gpt" in gpt_model:
+                response = client.chat.completions.create(
+                    model=gpt_model,
+                    messages=messages,
+                    temperature=args.temperature,
+                    max_tokens=args.max_tokens,
+                )
+                rslt = response.choices[0].message.content
+            elif "gemini" in gpt_model:
+                response = client.models.generate_content(
+                    model=gpt_model, contents=prompt,
+                    # config=genai.types.GenerateContentConfig(
+                    #         max_output_tokens=args.max_tokens,
+                    #         temperature=args.temperature,
+                    #     ),
+                )
+                rslt = response.text
+                # print(rslt)
+            else:
+                raise ValueError("Invalid model name!")
             success = True
         except RateLimitError as e:
             print(f"sleep {SLEEP_TIME} seconds for rate limit error")
@@ -49,6 +63,9 @@ def get_response(client, prompt, args, gpt_model=None):
             print(f"sleep {SLEEP_TIME} seconds for api connection error")
             time.sleep(SLEEP_TIME)
         except APIError as e:
+            print(f"sleep {SLEEP_TIME} seconds for api error")
+            time.sleep(SLEEP_TIME)
+        except genai.errors.APIError as e:
             print(f"sleep {SLEEP_TIME} seconds for api error")
             time.sleep(SLEEP_TIME)
         except Exception as e:

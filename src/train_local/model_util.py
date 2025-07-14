@@ -11,17 +11,19 @@ def get_model_tokenizer(model_name, args):
     if "Qwen" in model_name or "Llama" in model_name:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         tokenizer.pad_token = tokenizer.eos_token
-        with init_empty_weights():
-            model = AutoModelForCausalLM.from_pretrained(model_name)
-        device_map = infer_auto_device_map(model, max_memory={0: "0GiB", 1: "0GiB", 2: "14GiB", 3: "14GiB",}, 
-                    no_split_module_classes=['MixtralDecoderLayer', "LlamaDecoderLayer", "Phi3DecoderLayer"])
-        print(device_map)
-        model = AutoModelForCausalLM.from_pretrained(model_name, device_map = device_map)
+        # with init_empty_weights():
+        #     model = AutoModelForCausalLM.from_pretrained(model_name)
+        # device_map = infer_auto_device_map(model, max_memory={0: "0GiB", 1: "0GiB", 2: "14GiB", 3: "14GiB",}, 
+        #             no_split_module_classes=['MixtralDecoderLayer', "LlamaDecoderLayer", "Phi3DecoderLayer"])
+        # print(device_map)
+        model = AutoModelForCausalLM.from_pretrained(model_name, device_map = "auto")
+        # print(model)
         peft_config = LoraConfig(
             task_type=TaskType.CAUSAL_LM, 
             r=8,
             lora_alpha=32,
             lora_dropout=0.05,
+            target_modules=["q_proj", "k_proj", "v_proj"],
         )
         model = get_peft_model(model, peft_config)
     elif "gemma" in model_name:

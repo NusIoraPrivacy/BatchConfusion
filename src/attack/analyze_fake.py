@@ -25,27 +25,27 @@ def get_unique_combs(comb_list):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--root_path", type=str, default=root_path)
-    parser.add_argument("--data_name", type=str, default="mmlu_fina")
+    parser.add_argument("--data_name", type=str, default=data_names[0])
     parser.add_argument("--in_file_name", type=str, default="fake_cattr_random_Qwen2.5-0.5B-Instruct_10.json")
-    parser.add_argument("--fake_key", type=str, default=fake_keys[1])
-    parser.add_argument("--priv_key", type=str, default=priv_keys[1])
-    parser.add_argument("--query_key", type=str, default=query_keys[1])
+    parser.add_argument("--fake_key", type=str, default=fake_keys[0])
+    parser.add_argument("--priv_key", type=str, default=priv_keys[2])
+    parser.add_argument("--query_key", type=str, default=query_keys[0])
     args = parser.parse_args()
     return args
 
 if __name__ == "__main__":
     args = parse_args()
     # for model in ["Qwen2.5-0.5B-Instruct", "Qwen2.5-1.5B-Instruct"]:
-    for model in ["Qwen2.5-1.5B-Instruct"]:
+    for model in ["Qwen2.5-0.5B-Instruct"]:
         for ratio in [2, 5, 10]:
         # for ratio in [2]:
-            args.in_file_name = f"fake_cattr_random_{model}_{ratio}.json"
+            args.in_file_name = f"fake_qattr_random_{model}_{ratio}.json"
             print("----------------------------------")
             print(f"### Counting for {args.in_file_name} ###")
             data_path = f'{args.root_path}/result/{args.data_name}/{args.in_file_name}'
             with open(data_path) as fin:
                 data = json.load(fin)
-
+            print(len(data))
             n_fakes = []
             n_attrs = []
             n_2way_attrs = []
