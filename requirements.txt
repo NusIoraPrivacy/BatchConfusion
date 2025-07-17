@@ -1,0 +1,9 @@
+torch
+torchvision
+torchaudio
+numpy
+pandas
+scikit-learn
+transformers
+datasets
+peft

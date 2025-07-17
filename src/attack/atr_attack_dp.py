@@ -1,5 +1,4 @@
 from transformers import default_data_collator, get_scheduler
-from sentence_transformers import SentenceTransformer
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import torch
